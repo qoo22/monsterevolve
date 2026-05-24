@@ -956,10 +956,12 @@ img{-webkit-user-drag:none;}
 }
 /* 3D Pack display */
 .gacha-pack-stage{
-  height:280px;border-radius:18px;position:relative;overflow:hidden;
+  height:300px;border-radius:18px;position:relative;overflow:hidden;
   margin-bottom:14px;
   background:radial-gradient(ellipse at center,#1a0a3a 0%,#0a0014 70%,#000 100%);
   display:flex;align-items:center;justify-content:center;
+  /* V31: タイトル/説明と画像の重なり防止 — 上下にセーフエリア確保 */
+  padding-top:48px;padding-bottom:48px;
   box-shadow:0 8px 32px rgba(0,0,0,0.7),inset 0 0 60px rgba(255,107,255,0.15);
   perspective:1200px;
 }
@@ -971,15 +973,20 @@ img{-webkit-user-drag:none;}
 }
 @keyframes packStageSpin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 .gacha-pack-img{
-  width:160px;height:240px;
+  /* V31: セーフエリア内に収まるサイズ */
+  width:auto;max-width:160px;
+  height:100%;max-height:200px;
   object-fit:contain;
   filter:drop-shadow(0 12px 24px rgba(0,0,0,0.9)) drop-shadow(0 0 20px rgba(255,215,0,0.4));
   animation:packFloat 4s ease-in-out infinite;
   position:relative;z-index:2;
+  /* 3D回転を控えめにして横ずれ感を減らす */
+  transform-origin:center center;
 }
 @keyframes packFloat{
-  0%,100%{transform:translateY(0) rotateY(-8deg);}
-  50%{transform:translateY(-12px) rotateY(8deg);}
+  /* V31: rotateY を ±8 → ±3 度に削減、上下も控えめ */
+  0%,100%{transform:translateY(0) rotateY(-3deg);}
+  50%{transform:translateY(-6px) rotateY(3deg);}
 }
 /* ===== V10: パックごとに常時パルス発光する設計 ===== */
 .gacha-pack-stage.legendary .gacha-pack-img{
@@ -1078,8 +1085,8 @@ img{-webkit-user-drag:none;}
   opacity:0.95;
 }
 @media (max-width:380px){
-  .gacha-pack-stage{height:230px;}
-  .gacha-pack-img{width:130px;height:200px;}
+  .gacha-pack-stage{height:250px;padding-top:42px;padding-bottom:42px;}
+  .gacha-pack-img{max-width:130px;max-height:166px;}
   .gacha-pack-title{font-size:15px;letter-spacing:2px;}
 }
 .gacha-banner h2{font-size:18px;font-weight:900;z-index:2;position:relative;
@@ -2783,7 +2790,38 @@ img{-webkit-user-drag:none;}
   position:relative;
 }
 .modal-card-show{
-  width:160px;aspect-ratio:3/4;margin:0 auto 14px;
+  /* V32: タップ詳細モーダルのカードを大きく + 原本画像 + フル装飾 */
+  width:260px;aspect-ratio:3/4;margin:0 auto 14px;
+  position:relative;
+}
+.modal-card-show .card{
+  width:100%;height:100%;
+}
+/* V32: 詳細モーダル内では BOX の簡素化を無効化 */
+.modal-card-show .card .art::before,
+.modal-card-show .card .art::after,
+.modal-card-show .card::before,
+.modal-card-show .card::after{
+  display:initial !important;
+  opacity:1 !important;
+  animation:revert !important;
+}
+.modal-card-show .card.r-GOD,
+.modal-card-show .card.r-GOD .art > span,
+.modal-card-show .card.r-GOD .art.has-img img,
+.modal-card-show .card.r-LR .art > span,
+.modal-card-show .card.r-LR .art.has-img img,
+.modal-card-show .card.r-UR .art > span,
+.modal-card-show .card.mythic .art > span,
+.modal-card-show .card.legendary{
+  animation:revert !important;
+  filter:revert !important;
+}
+.modal-card-show .card.r-GOD.frame-mini{
+  box-shadow:revert !important;
+}
+@media (max-width:380px){
+  .modal-card-show{width:220px;}
 }
 .modal-stats{
   background:rgba(0,0,0,0.4);border-radius:10px;padding:10px;margin-bottom:10px;
@@ -7520,7 +7558,8 @@ function showDetail(uid){
   const c = document.getElementById('modal-content');
   c.innerHTML = `
     <button class="close-btn" onclick="closeModal()">✕</button>
-    <div class="modal-card-show">${cardHtml(m,'mini')}</div>
+    <!-- V32: 詳細モーダルのカードを原本画像 + フル装飾で表示 -->
+    <div class="modal-card-show">${cardHtml(m,'mini',{small:false,tiny:false})}</div>
     <div style="text-align:center;margin-bottom:8px;">
       <div style="font-size:16px;font-weight:900;">${m.name}${m.evo>0?`<span style="color:#ffd700;"> +${m.evo}</span>`:''}</div>
       <div style="font-size:10px;opacity:0.7;">タイプ: ${m.type.toUpperCase()} / レアリティ: ${m.rarity}</div>
