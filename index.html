@@ -3042,17 +3042,19 @@ img{-webkit-user-drag:none;}
   letter-spacing:8px;color:#ffd700;margin-top:6px;
   text-shadow:0 1px 4px rgba(0,0,0,0.9),0 0 12px rgba(255,215,0,0.8);
 }
-/* ===== V20: ホームタイル本格化 (V22: iOS Safariのbackdrop-filter削除でメモリ削減) ===== */
+/* ===== V20: ホームタイル本格化 (グラスモーフィズム + 奥行き + ホバー浮遊) ===== */
 .home-grid .tile{
   position:relative;
   border-radius:14px;
-  background:rgba(20,20,40,0.6);
-  /* backdrop-filter:blur(8px); ← V22: iOS でメモリ激重なので削除 */
+  background:rgba(255,255,255,0.04);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
   border:1px solid rgba(255,255,255,0.18);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.2),
     inset 0 -1px 0 rgba(0,0,0,0.5),
-    0 4px 12px rgba(0,0,0,0.5);
+    0 4px 12px rgba(0,0,0,0.5),
+    0 8px 24px rgba(0,0,0,0.4);
   transition:transform 0.2s, box-shadow 0.2s;
   overflow:hidden;
 }
@@ -6311,9 +6313,9 @@ function starHtml(n){
 }
 
 function artHtml(m){
-  // V22: iOS Safari メモリ対策 — width/height 明示でデコード前にサイズ確保 + async decode
+  // If AI-generated image exists, use it; else fall back to emoji
   if(m.img){
-    return `<div class="art has-img"><img src="${m.img}" alt="${m.name}" loading="lazy" decoding="async" width="180" height="240" onerror="this.parentElement.innerHTML='<span>'+'${m.art}'+'</span>'"></div>`;
+    return `<div class="art has-img"><img src="${m.img}" alt="${m.name}" loading="lazy" onerror="this.parentElement.innerHTML='<span>'+'${m.art}'+'</span>'"></div>`;
   }
   return `<div class="art"><span>${m.art}</span></div>`;
 }
@@ -6355,9 +6357,7 @@ function cardHtml(m,size='mini'){
 // ---------- BOX ----------
 let boxFilter = 'all';
 // ===== V14: BOX 段階ロード — 初期表示数を抑えて軽量化 =====
-// V22: iOS Safari メモリ上限対策 — ページサイズを60→24に削減
-// (1024px画像は1枚あたりメモリ上で約4MB消費するため、60枚=240MBで即クラッシュ)
-const BOX_PAGE_SIZE = 24;
+const BOX_PAGE_SIZE = 60;
 let _boxRenderedCount = 0;
 let _boxFullList = [];
 
@@ -6417,30 +6417,16 @@ function _renderBoxMore(){
     img.loading = 'lazy';
     img.decoding = 'async';
   });
-  // V22: IntersectionObserver — off-screen 時に画像srcを外してメモリ解放 (iOS Safari対策)
+  // IntersectionObserver アタッチ
   if('IntersectionObserver' in window){
     if(!window._boxObserver){
       window._boxObserver = new IntersectionObserver((entries)=>{
         entries.forEach(e=>{
-          const offScreen = !e.isIntersecting;
-          e.target.classList.toggle('off-screen', offScreen);
-          // 画像のsrcを退避/復元してGPUメモリを解放
-          const img = e.target.querySelector('img.has-src');
-          if(img){
-            if(offScreen && img.src && !img.dataset.savedSrc){
-              img.dataset.savedSrc = img.src;
-              img.removeAttribute('src');
-            } else if(!offScreen && img.dataset.savedSrc){
-              img.src = img.dataset.savedSrc;
-              delete img.dataset.savedSrc;
-            }
-          }
+          e.target.classList.toggle('off-screen', !e.isIntersecting);
         });
-      }, {root:null, rootMargin:'100px'});  // 200→100px に縮小 (より積極的に解放)
+      }, {root:null, rootMargin:'200px'});
     }
     grid.querySelectorAll('.box-cell:not(.observed)').forEach(el => {
-      // 画像にhas-srcクラス付与 (Observerが管理対象を識別)
-      el.querySelectorAll('img').forEach(img => img.classList.add('has-src'));
       window._boxObserver.observe(el);
       el.classList.add('observed');
     });
