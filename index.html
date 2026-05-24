@@ -1810,6 +1810,121 @@ img{-webkit-user-drag:none;}
   animation:none !important;
 }
 
+/* ===== V29: BOX セルは装飾を最大2層に削減してiOSメモリ激減 ===== */
+/* - 静的なフレームグラデは残す (1層)
+   - ペナルティの高いアニメ/ハロー/光線/キラ星を全廃
+   - シャドウも最小限に */
+.box-cell .card .art::before,
+.box-cell .card .art::after,
+.box-cell .card::before,
+.box-cell .card::after{
+  animation:none !important;
+  opacity:0 !important;
+  display:none !important;
+}
+.box-cell .card.r-GOD .art > span,
+.box-cell .card.r-LR .art > span,
+.box-cell .card.r-UR .art > span,
+.box-cell .card.mythic .art > span,
+.box-cell .card.r-GOD .art.has-img img,
+.box-cell .card.r-LR .art.has-img img,
+.box-cell .card.r-UR .art.has-img img,
+.box-cell .card.mythic .art.has-img img,
+.box-cell .card.legendary{
+  animation:none !important;
+  /* 静的な薄いシャドウだけ残す (1〜2層) */
+}
+.box-cell .card.r-GOD .art > span,
+.box-cell .card.r-GOD .art.has-img img{
+  filter:drop-shadow(0 0 4px rgba(255,215,0,0.5)) !important;
+}
+.box-cell .card.r-LR .art > span,
+.box-cell .card.r-LR .art.has-img img,
+.box-cell .card.r-UR .art > span,
+.box-cell .card.r-UR .art.has-img img,
+.box-cell .card.mythic .art > span,
+.box-cell .card.mythic .art.has-img img{
+  filter:drop-shadow(0 0 3px rgba(255,255,255,0.4)) !important;
+}
+/* フレーム多重シャドウを削減 (元: 5層 → BOXでは2層) */
+.box-cell .card.r-GOD.frame-mini{
+  box-shadow:
+    inset 0 0 0 1px #fff,
+    0 0 6px #ffd70088 !important;
+}
+.box-cell .card.r-LR.frame-mini,
+.box-cell .card.mythic.frame-mini{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.6),
+    0 0 4px #ffd70066 !important;
+}
+.box-cell .card.r-UR.frame-mini{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,107,255,0.5),
+    0 0 3px #ff6bff66 !important;
+}
+.box-cell .card.r-SSR.frame-mini{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,215,0,0.5) !important;
+}
+.box-cell .card.r-GOD.frame-mini,
+.box-cell .card.mythic.frame-mini{
+  /* 背景アニメ停止 — 静止グラデで重さゼロ */
+  animation:none !important;
+  background-position:50% 50% !important;
+}
+/* スキルチップ行も簡素化 (アニメグラデ削除) */
+.box-cell .card .skill-chip.ult{
+  animation:none !important;
+}
+/* skill-row 自体は表示維持 */
+
+/* ===== V30: タップ中の1枚だけ装飾フル復活 =====
+   .box-cell.tap-focused に限り、上記の "停止" を全て解除して通常演出に戻す
+   → 他のカードは静止、選んだ1枚だけ豪華に光る */
+.box-cell.tap-focused .card .art::before,
+.box-cell.tap-focused .card .art::after,
+.box-cell.tap-focused .card::before,
+.box-cell.tap-focused .card::after{
+  display:initial !important;
+  opacity:1 !important;
+  animation:revert !important;
+}
+.box-cell.tap-focused .card.r-GOD,
+.box-cell.tap-focused .card.r-GOD.frame-mini,
+.box-cell.tap-focused .card.r-GOD .art > span,
+.box-cell.tap-focused .card.r-GOD .art.has-img img,
+.box-cell.tap-focused .card.r-GOD .art::before,
+.box-cell.tap-focused .card.r-GOD .art::after,
+.box-cell.tap-focused .card.r-GOD::before,
+.box-cell.tap-focused .card.r-LR.frame-mini,
+.box-cell.tap-focused .card.r-LR .art > span,
+.box-cell.tap-focused .card.r-LR .art::after,
+.box-cell.tap-focused .card.mythic.frame-mini,
+.box-cell.tap-focused .card.mythic .art > span,
+.box-cell.tap-focused .card.legendary{
+  animation:revert !important;
+  filter:revert !important;
+}
+/* フォーカス中は浮き上がる演出 + ズーム */
+.box-cell.tap-focused{
+  z-index:50;
+  transform:scale(1.06);
+  transition:transform 0.25s ease-out;
+  filter:drop-shadow(0 0 16px rgba(255,215,0,0.7)) drop-shadow(0 0 32px rgba(255,107,255,0.5));
+}
+.box-cell{transition:transform 0.2s ease;}
+/* 多重シャドウも復活 (GOD) */
+.box-cell.tap-focused .card.r-GOD.frame-mini{
+  box-shadow:revert !important;
+}
+.box-cell.tap-focused .card.r-LR.frame-mini,
+.box-cell.tap-focused .card.mythic.frame-mini,
+.box-cell.tap-focused .card.r-UR.frame-mini,
+.box-cell.tap-focused .card.r-SSR.frame-mini{
+  box-shadow:revert !important;
+}
+
 /* ===== V13: GOD/MYTHIC/LR の演出を BOX/進化欄でも全面再開 =====
    ユーザー要請により cosmicSpin / legpulse / godShift / godAscend /
    godRays / godImgGlow / godHoloStripe (斜めキラキラ) を全部 ON のままにする */
@@ -6487,6 +6602,26 @@ function _renderBoxPage(){
   }
   grid.appendChild(frag);
   grid.querySelectorAll('img').forEach(img => { img.loading='lazy'; img.decoding='async'; });
+  // V30: 各.box-cellのカードクリックを捕まえる — まず1枚だけ装飾フル発動→詳細表示
+  grid.querySelectorAll('.box-cell').forEach(cell => {
+    const card = cell.querySelector('.card');
+    if(!card) return;
+    const uid = card.getAttribute('data-uid');
+    if(!uid) return;
+    // 元の showDetail onclick を無効化 → 独自ハンドラ
+    card.onclick = (ev) => {
+      ev.stopPropagation();
+      // 全 box-cell の tap-focused を外し、自分だけ付ける
+      grid.querySelectorAll('.box-cell.tap-focused').forEach(el => el.classList.remove('tap-focused'));
+      cell.classList.add('tap-focused');
+      // 短い演出時間後に詳細モーダル
+      setTimeout(() => {
+        try{ showDetail(parseInt(uid, 10)); }catch(e){}
+        // モーダル開いたら focused 解除 (詳細閉じた後に静止状態に戻すため)
+        setTimeout(() => cell.classList.remove('tap-focused'), 600);
+      }, 380);
+    };
+  });
   // IntersectionObserver (off-screen クラスのみ)
   if('IntersectionObserver' in window){
     window._boxObserver = new IntersectionObserver((entries)=>{
