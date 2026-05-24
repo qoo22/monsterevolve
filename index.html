@@ -132,7 +132,8 @@ img{-webkit-user-drag:none;}
 .home-banner p{font-size:11px;opacity:0.95;position:relative;z-index:1;}
 
 .home-banner-carousel{
-  height:200px;border-radius:16px;position:relative;
+  /* V38: 200px → 220px + aspect-ratio で顔切れ余裕を確保 */
+  height:220px;border-radius:16px;position:relative;
   margin-bottom:8px;overflow:hidden;
   box-shadow:0 8px 24px rgba(0,0,0,0.6),0 0 0 1px #ffd70044;
 }
@@ -145,11 +146,12 @@ img{-webkit-user-drag:none;}
 }
 .home-banner-slide.active{opacity:1;}
 .home-banner-slide .banner-img{
-  /* バナーの中央を固定表示、Ken Burns削除でずれゼロ */
+  /* V38: object-position を画像の上部30%地点に — ドラゴンの顔位置に合わせる
+     画像の y=30% が container の縦中央に表示される → 顔がど真ん中に来る */
   position:absolute;inset:0;
   width:100%;height:100%;
   object-fit:cover;
-  object-position:center center;  /* 上半身寄りで主役を確実に見せる */
+  object-position:center 30%;
   z-index:0;
 }
 .home-banner-slide .banner-overlay{
@@ -190,8 +192,9 @@ img{-webkit-user-drag:none;}
 .tile-img .ico{font-size:36px;text-shadow:0 2px 8px #000;}
 .tile-img .name{font-size:14px;font-weight:900;letter-spacing:2px;text-shadow:0 2px 4px #000;}
 .tile-img .sub{font-size:10px;opacity:0.9;text-shadow:0 1px 2px #000;}
-@media (max-width:380px){.home-banner-carousel{height:160px;}.home-banner-slide h2{font-size:18px;}}
-@media (max-width:330px){.home-banner-carousel{height:130px;}}
+/* V38: 小画面でも顔切れしないよう高さUP */
+@media (max-width:380px){.home-banner-carousel{height:180px;}.home-banner-slide h2{font-size:18px;}}
+@media (max-width:330px){.home-banner-carousel{height:150px;}}
 .home-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
 .tile{
   background:linear-gradient(135deg,#1e1e3f,#2a1845);
@@ -885,20 +888,99 @@ img{-webkit-user-drag:none;}
   animation:none !important;
   opacity:0;
 }
-/* V21: 出撃チーム編成 (team picker) では GOD の godImgGlow を抑制 */
-/* (チラつきと視認性低下を防ぐ。光のシャドウは静的に残す) */
-.bulk-picker-grid .card.r-GOD .art.has-img img,
+/* ===== V40: ピッカー上部5枠 (.picker-slot) はオーラを完全に消す ===== */
+/* (出撃メンバーが何かをひと目で見やすくするため装飾なし) */
+.picker-slot .card .art::before,
+.picker-slot .card .art::after,
+.picker-slot .card::before,
+.picker-slot .card::after{
+  animation:none !important;
+  opacity:0 !important;
+  display:none !important;
+}
+.picker-slot .card,
+.picker-slot .card.r-GOD,
+.picker-slot .card.r-GOD.frame-mini,
+.picker-slot .card.r-GOD .art > span,
+.picker-slot .card.r-GOD .art.has-img img,
+.picker-slot .card.r-LR,
+.picker-slot .card.r-LR.frame-mini,
+.picker-slot .card.r-LR .art > span,
+.picker-slot .card.r-LR .art.has-img img,
+.picker-slot .card.r-UR,
+.picker-slot .card.r-UR .art > span,
+.picker-slot .card.r-UR .art.has-img img,
+.picker-slot .card.mythic,
+.picker-slot .card.mythic.frame-mini,
+.picker-slot .card.mythic .art > span,
+.picker-slot .card.legendary{
+  animation:none !important;
+  filter:none !important;
+}
+.picker-slot .card.frame-mini,
+.picker-slot .card.r-GOD.frame-mini,
+.picker-slot .card.r-LR.frame-mini,
+.picker-slot .card.r-UR.frame-mini,
+.picker-slot .card.mythic.frame-mini{
+  background-position:50% 50% !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.4) !important;
+}
+
+/* ===== V37: 出撃チーム編成のカードを BOX 同様に超軽量化 ===== */
+/* 全擬似要素を消去 (godHoloStripe / godSparkleDrift / godRays 等を停止) */
+.bulk-picker-grid .card .art::before,
+.bulk-picker-grid .card .art::after,
+.bulk-picker-grid .card::before,
+.bulk-picker-grid .card::after{
+  animation:none !important;
+  opacity:0 !important;
+  display:none !important;
+}
+/* 全アニメーション停止 (フレーム回転/legpulse/godAscend/godImgGlow など) */
+.bulk-picker-grid .card.r-GOD,
+.bulk-picker-grid .card.r-GOD.frame-mini,
 .bulk-picker-grid .card.r-GOD .art > span,
-.bulk-picker-grid .card.r-GOD .art::after,
-.bulk-picker-grid .card.r-GOD::before,
-.bulk-picker-grid .card.r-GOD .art::before{
+.bulk-picker-grid .card.r-GOD .art.has-img img,
+.bulk-picker-grid .card.r-LR,
+.bulk-picker-grid .card.r-LR.frame-mini,
+.bulk-picker-grid .card.r-LR .art > span,
+.bulk-picker-grid .card.r-LR .art.has-img img,
+.bulk-picker-grid .card.r-UR,
+.bulk-picker-grid .card.r-UR .art > span,
+.bulk-picker-grid .card.mythic,
+.bulk-picker-grid .card.mythic.frame-mini,
+.bulk-picker-grid .card.mythic .art > span,
+.bulk-picker-grid .card.legendary{
   animation:none !important;
 }
-/* 光のドロップシャドウは控えめに固定 */
-.bulk-picker-grid .card.r-GOD .art.has-img img{
-  filter:
-    drop-shadow(0 0 8px rgba(255,255,255,0.6))
-    drop-shadow(0 0 16px rgba(255,215,0,0.5)) !important;
+/* GOD / LR の filter を控えめ固定値に */
+.bulk-picker-grid .card.r-GOD .art.has-img img,
+.bulk-picker-grid .card.r-GOD .art > span{
+  filter:drop-shadow(0 0 6px rgba(255,215,0,0.5)) !important;
+}
+.bulk-picker-grid .card.r-LR .art.has-img img,
+.bulk-picker-grid .card.r-LR .art > span,
+.bulk-picker-grid .card.r-UR .art.has-img img,
+.bulk-picker-grid .card.mythic .art.has-img img{
+  filter:drop-shadow(0 0 4px rgba(255,255,255,0.4)) !important;
+}
+/* 多重シャドウ削減 — フレーム背景の回転も止める */
+.bulk-picker-grid .card.r-GOD.frame-mini,
+.bulk-picker-grid .card.mythic.frame-mini{
+  background-position:50% 50% !important;
+  box-shadow:
+    inset 0 0 0 1px #fff,
+    0 0 4px #ffd70088 !important;
+}
+.bulk-picker-grid .card.r-LR.frame-mini{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.6),
+    0 0 3px #ffd70066 !important;
+}
+.bulk-picker-grid .card.r-UR.frame-mini{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,107,255,0.5),
+    0 0 2px #ff6bff66 !important;
 }
 .bulk-picker-item:active{transform:scale(0.93);}
 .bulk-picker-item.selected{
@@ -3242,9 +3324,8 @@ img{-webkit-user-drag:none;}
     0 0 30px rgba(255,107,255,0.15);
   background:#000;
 }
-.home-banner-slide{
-  position:relative;
-}
+/* V36: 重複ブロック削除 — position:relative がV27のposition:absoluteを破壊していたため
+   .home-banner-slide の位置指定はファイル先頭(139行付近)に統一 */
 .home-banner-slide::after{
   /* V27: img+overlay 方式に変更したため無効化 */
   content:none;
@@ -8503,21 +8584,28 @@ function openTeamPicker(onConfirm){
   // Default: top 5 by stat total
   _teamPickerSelection = pool.slice(0, Math.min(5, pool.length)).map(m=>m.uid);
   _teamPickerOnConfirm = onConfirm;
+  _teamPickerPage = 0;  // V39: 開く時はページ0に
   renderTeamPicker();
 }
 // チーム編成picker: 大量モンスター時の描画上限
-const TEAM_PICKER_MAX_DISPLAY = 300;
+// V37+V39: 1ページ48体 + 前/次でページ送り (全モンスター選択可能)
+const TEAM_PICKER_MAX_DISPLAY = 48;
+let _teamPickerPage = 0;
 
 function renderTeamPicker(){
   const allPool = _sortByStatTotal(state.monsters.filter(m=>!m.listed));
-  // 上位N体だけ表示（選択中のものは必ず含める）
+  // V39: ページング - 1ページ48体ずつ
+  const totalPages = Math.max(1, Math.ceil(allPool.length / TEAM_PICKER_MAX_DISPLAY));
+  if(_teamPickerPage >= totalPages) _teamPickerPage = totalPages - 1;
+  if(_teamPickerPage < 0) _teamPickerPage = 0;
+  const start = _teamPickerPage * TEAM_PICKER_MAX_DISPLAY;
+  const end = Math.min(allPool.length, start + TEAM_PICKER_MAX_DISPLAY);
+  const pagePool = allPool.slice(start, end);
+  // 選択中で現ページ外のものを末尾に追加 (表示してすぐ外せるように)
   const selectedSet = new Set(_teamPickerSelection);
-  const topPool = allPool.slice(0, TEAM_PICKER_MAX_DISPLAY);
-  // 選択中で表示外のものを末尾に追加
-  const displaySet = new Set(topPool.map(m => m.uid));
+  const displaySet = new Set(pagePool.map(m => m.uid));
   const extras = allPool.filter(m => selectedSet.has(m.uid) && !displaySet.has(m.uid));
-  const pool = [...topPool, ...extras];
-  const hidden = allPool.length - pool.length;
+  const pool = [...pagePool, ...extras];
   const c = document.getElementById('modal-content');
   const slotImgs = [0,1,2,3,4].map(slot=>{
     const uid = _teamPickerSelection[slot];
@@ -8525,16 +8613,18 @@ function renderTeamPicker(){
     const role = slot<3 ? '出陣' : '控え';
     const roleColor = slot<3 ? '#ffd700' : '#888';
     if(!m) return `<div style="aspect-ratio:3/4;border:2px dashed #fff3;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff5;">枠${slot+1}<br>(${role})</div>`;
-    return `<div style="position:relative;cursor:pointer;" onclick="_pickerRemove(${slot})">
-      ${cardHtml(m,'mini').replace(/onclick="[^"]+"/,'')}
+    // V40: ピッカー上部5枠は .picker-slot クラスでオーラ抑制
+    return `<div class="picker-slot" style="position:relative;cursor:pointer;" onclick="_pickerRemove(${slot})">
+      ${cardHtml(m,'mini',{tiny:true}).replace(/onclick="[^"]+"/,'')}
       <div style="position:absolute;top:0;left:0;right:0;background:${roleColor};color:#000;font-size:8px;text-align:center;padding:1px;font-weight:900;border-radius:8px 8px 0 0;">${slot+1} ${role}</div>
     </div>`;
   }).join('');
+  // V37: tinyサムネ使用 + onclick除去
   const gridHtml = pool.map(m => {
     const slot = _teamPickerSelection.indexOf(m.uid);
     const isPicked = slot >= 0;
     return `<div class="bulk-picker-item ${isPicked?'selected':''}" onclick="_pickerToggle(${m.uid})">
-      ${cardHtml(m,'mini').replace(/onclick="[^"]+"/,'')}
+      ${cardHtml(m,'mini',{tiny:true}).replace(/onclick="[^"]+"/,'')}
       ${isPicked?`<div class="pick-num">${slot+1}</div>`:''}
     </div>`;
   }).join('');
@@ -8547,7 +8637,17 @@ function renderTeamPicker(){
       <button onclick="_pickerAuto()" style="flex:1;background:linear-gradient(135deg,#ffd700,#ff6b35);color:#000;padding:8px;border-radius:8px;font-weight:900;font-size:11px;border:none;cursor:pointer;">⭐ 能力値TOP5</button>
       <button onclick="_pickerClear()" style="background:#444;color:#fff;padding:8px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;">クリア</button>
     </div>
-    <div class="section-title">手持ち (${pool.length}体)${hidden>0?` <span style="color:#888;font-size:10px;font-weight:400;letter-spacing:0;margin-left:6px;">+ 弱い${hidden}体を非表示</span>`:''}</div>
+    <div class="section-title">手持ち <span style="color:#fff;font-size:11px;font-weight:700;margin-left:6px;">${start+1}〜${end}/全${allPool.length}体</span></div>
+    <!-- V39: ページ送り (1ページ48体) -->
+    ${totalPages > 1 ? `<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;">
+      <button onclick="_pickerPage(0)" ${_teamPickerPage<=0?'disabled':''} style="padding:6px 10px;border-radius:6px;border:none;cursor:pointer;background:${_teamPickerPage<=0?'#333':'linear-gradient(135deg,#7b2ff7,#00d4ff)'};color:#fff;font-weight:900;font-size:11px;opacity:${_teamPickerPage<=0?0.4:1};">⏮</button>
+      <button onclick="_pickerPage(${_teamPickerPage-1})" ${_teamPickerPage<=0?'disabled':''} style="padding:6px 10px;border-radius:6px;border:none;cursor:pointer;background:${_teamPickerPage<=0?'#333':'linear-gradient(135deg,#7b2ff7,#00d4ff)'};color:#fff;font-weight:900;font-size:11px;opacity:${_teamPickerPage<=0?0.4:1};">◀ 前</button>
+      <div style="background:#0a0a14;border:1px solid #444;padding:5px 12px;border-radius:6px;font-size:11px;color:#fff;font-weight:900;">
+        <span style="color:#ffd700;">${_teamPickerPage+1}</span> / ${totalPages}
+      </div>
+      <button onclick="_pickerPage(${_teamPickerPage+1})" ${_teamPickerPage>=totalPages-1?'disabled':''} style="padding:6px 10px;border-radius:6px;border:none;cursor:pointer;background:${_teamPickerPage>=totalPages-1?'#333':'linear-gradient(135deg,#ff6b35,#ffd700)'};color:#000;font-weight:900;font-size:11px;opacity:${_teamPickerPage>=totalPages-1?0.4:1};">次 ▶</button>
+      <button onclick="_pickerPage(${totalPages-1})" ${_teamPickerPage>=totalPages-1?'disabled':''} style="padding:6px 10px;border-radius:6px;border:none;cursor:pointer;background:${_teamPickerPage>=totalPages-1?'#333':'linear-gradient(135deg,#ff6b35,#ffd700)'};color:#000;font-weight:900;font-size:11px;opacity:${_teamPickerPage>=totalPages-1?0.4:1};">⏭</button>
+    </div>` : ''}
     <div class="bulk-picker-grid">${gridHtml}</div>
     <div class="bulk-picker-info">
       <div style="font-size:11px;text-align:center;margin-bottom:6px;">選択中: <b style="color:#ffd700;">${_teamPickerSelection.length}/5</b></div>
@@ -8578,6 +8678,8 @@ function _pickerAuto(){
   renderTeamPicker();
 }
 function _pickerClear(){ _teamPickerSelection = []; SFX.click(); renderTeamPicker(); }
+// V39: ページ送り
+function _pickerPage(p){ _teamPickerPage = p; SFX.click(); renderTeamPicker(); }
 function _pickerConfirm(){
   if(_teamPickerSelection.length === 0){ toast('少なくとも1体は選択','error'); return; }
   const sel = [..._teamPickerSelection];
@@ -11929,9 +12031,23 @@ function _startPvPBattleWithTeam(decoded, selectedUids){
 }
 
 // ---------- HOME BANNER CAROUSEL ----------
+// V38: 期間限定パックに応じてイベントバナーを切替
+const LIMITED_BANNERS = {
+  lp_fire:   {img:'images/banner_event_fire_v38.jpg',   h2:'🔥 炎神召喚パック開催中', p:'インフェルノックス・フェニックス・イフリータ3倍'},
+  lp_water:  {img:'images/banner_event_water_v38.jpg',  h2:'🌊 海神召喚パック開催中', p:'レヴィアス・クラクロス・ツナミック3倍'},
+  lp_dark:   {img:'images/banner_event_dark_v38.jpg',   h2:'💀 闇神召喚パック開催中', p:'ヴォイドキング・レイパーZ・リッチキング3倍'},
+  lp_cosmic: {img:'images/banner_event_cosmic_v38.jpg', h2:'🌌 神話召喚パック開催中', p:'OVR136 ジェネシス級が降臨！'},
+};
+function getEventBannerForCurrentPack(){
+  try{
+    const lp = getCurrentLimitedPack();
+    if(lp && LIMITED_BANNERS[lp.id]) return {info:LIMITED_BANNERS[lp.id], lpId:lp.id};
+  }catch(e){}
+  return null;
+}
 const HOME_BANNERS = [
   {imgKey:'home_banner_legendary', tag:'★ PICK UP', h2:'幻獣召喚 ── 神話覚醒', p:'OVR136のジェネシス、エテルナロンに挑め。'},
-  {imgKey:'home_banner_event', tag:'⏱ 期間限定', h2:'限定パック開催中', p:'特集モンスター3倍率の超低天井60連パック。'},
+  {dynamic:'event',            tag:'⏱ 期間限定', h2:'限定パック開催中', p:'特集モンスター3倍率の超低天井60連パック。'},
   {imgKey:'home_banner_pvp', tag:'⚔ BATTLE', h2:'12ダンジョン解禁', p:'最終領域「創世の彼方」で💎600獲得。'},
 ];
 let homeBannerIdx = 0;
@@ -11940,16 +12056,28 @@ function renderHomeBanners(){
   const car = document.getElementById('home-banner-carousel');
   const dots = document.getElementById('home-banner-dots');
   if(!car) return;
-  // V27: background-image から <img> タグに変更 — 位置が確実に揃う
+  // V27+V38: background-image から <img> + 動的バナー (限定パック連動)
   car.innerHTML = HOME_BANNERS.map((b,i)=>{
-    const bg = (typeof UI_IMG !== 'undefined' && UI_IMG[b.imgKey]) ? UI_IMG[b.imgKey] : '';
+    let bg = '', h2 = b.h2, p = b.p;
+    if(b.dynamic === 'event'){
+      const ev = getEventBannerForCurrentPack();
+      if(ev){
+        bg = ev.info.img;
+        h2 = ev.info.h2;
+        p  = ev.info.p;
+      } else if(typeof UI_IMG !== 'undefined' && UI_IMG.home_banner_event){
+        bg = UI_IMG.home_banner_event;
+      }
+    } else {
+      bg = (typeof UI_IMG !== 'undefined' && UI_IMG[b.imgKey]) ? UI_IMG[b.imgKey] : '';
+    }
     return `<div class="home-banner-slide ${i===0?'active':''}" data-idx="${i}">
       ${bg ? `<img class="banner-img" src="${bg}" alt="" loading="lazy" decoding="async">` : ''}
       <div class="banner-overlay"></div>
       <div class="banner-content">
         <div class="banner-tag">${b.tag}</div>
-        <h2>${b.h2}</h2>
-        <p>${b.p}</p>
+        <h2>${h2}</h2>
+        <p>${p}</p>
       </div>
     </div>`;
   }).join('');
