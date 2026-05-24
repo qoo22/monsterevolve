@@ -68,8 +68,9 @@ img{-webkit-user-drag:none;}
   text-shadow:0 0 12px rgba(255,215,0,0.3);
 }
 .logo-img{
-  height:48px;width:auto;max-width:200px;object-fit:contain;
-  filter:drop-shadow(0 0 8px rgba(255,215,0,0.5));
+  /* V43: スタート画面と同じロゴ画像を使用 — ヘッダー高さに合わせて縮小 */
+  height:46px;width:auto;max-width:170px;object-fit:contain;object-position:left center;
+  filter:drop-shadow(0 0 8px rgba(255,215,0,0.5)) drop-shadow(0 0 3px rgba(255,107,255,0.4));
 }
 .resources{display:flex;gap:10px;align-items:center;}
 .res-pill{
@@ -1349,62 +1350,29 @@ body.gacha-fx-light .gacha-stage.bg-MYTHIC{
 body.gacha-fx-light .beam{opacity:0.6 !important;animation-duration:2s !important;}
 body.gacha-fx-light .flash{filter:brightness(1) !important;}
 
-/* ===== V35: GOD ガチャ球 — MYTHIC風虹色 + GODの圧倒的スケール =====
-   MYTHICの虹グロー (白→マゼンタ→金→シアン) をベースに、
-   GOD専用の追加色(緑/紫)と倍のサイズ + ゴールドオーラを纏わせる */
+/* ===== V42: GOD ガチャ球 — MYTHIC方式そのまま色違い =====
+   MYTHIC が落ちずに動くので同じ構造を採用:
+   - 画像背景 (cover) — conic-gradient は使わない (重い)
+   - 2アニメ (orbPulse + orbRotate) のみ
+   - 多色 box-shadow 5層 (MYTHICは4層、GODは5層)
+   - 1 drop-shadow filter
+   ::before や追加アニメは無し */
 .orb.tier-GOD{
-  background:
-    /* 中央のキラハイライト */
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.95), transparent 50%),
-    /* 虹色コニックグラデで MYTHICっぽさを継承 */
-    conic-gradient(from 0deg,
-      #fff 0%,
-      #ffd700 12%,
-      #ff00ff 25%,
-      #b14cff 38%,
-      #00d4ff 50%,
-      #4cff7a 62%,
-      #ffd700 75%,
-      #ff6bff 87%,
-      #fff 100%);
-  background-size:100% 100%, 220% 220%;
-  /* 2アニメ維持 (処理軽量) */
-  animation:
-    orbRotate 0.9s linear infinite,
-    godRainbowPulse 1.3s ease-in-out infinite;
-  /* MYTHIC風の多色シャドウ + GODはさらに金箔オーラ追加 */
+  /* V44: ユーザー提供の虹色クリスタル球をそのまま使用 */
+  background:url(images/god_orb_v44.jpg) center/cover;
+  background-size:cover;
+  animation:orbPulse 0.22s alternate infinite,orbRotate 1.2s linear infinite;
+  /* MYTHICの 白+マゼンタ+金+シアン に GOD専用色「ライム緑」を追加 */
   box-shadow:
-    0 0 80px #fff,
-    0 0 180px #ff00ff,
-    0 0 280px #ffd700,
-    0 0 380px #00d4ff,
-    inset 0 0 60px rgba(255,255,255,0.85);
-  filter:
-    drop-shadow(0 0 30px #fff)
-    drop-shadow(0 0 60px #ffd700)
-    drop-shadow(0 0 90px #ff00ff)
-    saturate(1.4) brightness(1.1);
-  width:340px;height:340px;
-  border:4px solid #fff;
+    0 0 150px #fff,
+    0 0 300px #ff00ff,
+    0 0 400px #ffd700,
+    0 0 500px #00d4ff,
+    0 0 600px #4cff7a;
+  filter:drop-shadow(0 0 32px #ffd700);
+  width:300px;height:300px;
+  border:5px solid #fff;
   position:relative;
-}
-/* GOD専用ハロー — MYTHIC にはない逆回転の追加リング */
-.orb.tier-GOD::before{
-  content:"";position:absolute;inset:-32px;border-radius:50%;pointer-events:none;
-  background:conic-gradient(from 180deg,
-    transparent, #ffd700, transparent, #ff00ff, transparent, #00d4ff, transparent, #4cff7a, transparent, #fff, transparent);
-  filter:blur(8px);opacity:0.8;
-  animation:godHaloSpin 3s linear infinite reverse;
-  mix-blend-mode:screen;
-}
-@keyframes godHaloSpin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
-@keyframes godRainbowPulse{
-  0%,100%{
-    filter:drop-shadow(0 0 30px #fff) drop-shadow(0 0 60px #ffd700) drop-shadow(0 0 90px #ff00ff) saturate(1.4) brightness(1.1);
-  }
-  50%{
-    filter:drop-shadow(0 0 50px #fff) drop-shadow(0 0 100px #ffd700) drop-shadow(0 0 150px #ff00ff) drop-shadow(0 0 180px #00d4ff) saturate(1.7) brightness(1.3);
-  }
 }
 .beam.tier-GOD{
   opacity:0.95;animation-duration:1.5s;
@@ -3489,8 +3457,9 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 
 <!-- HEADER -->
 <div id="header">
-  <img src="images/img_0f1ec91bb69a.jpg" class="logo-img" alt="MAE" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
-  <div class="logo" style="display:none;">⚔ MONSTER ARENA EVOLVE</div>
+  <!-- V43: スタート画面と同じFLUX生成ロゴに統一 -->
+  <img src="images/title_logo_v20b.jpg" class="logo-img" alt="MONSTER EVOLVE" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+  <div class="logo" style="display:none;">⚔ MONSTER EVOLVE</div>
   <div class="resources">
     <button id="settings-btn" onclick="openSettings()" style="background:rgba(0,0,0,0.5);border:1px solid #ffd70044;padding:4px 8px;border-radius:14px;color:#fff;font-size:14px;cursor:pointer;">⚙</button>
     <button id="sound-toggle" onclick="toggleSound()" style="background:rgba(0,0,0,0.5);border:1px solid #ffffff22;padding:4px 8px;border-radius:14px;color:#fff;font-size:14px;cursor:pointer;">🔊</button>
@@ -6531,6 +6500,9 @@ function renderRes(){
 
 function nav(scr){
   SFX.navClick();
+  // V43: 画面切替時に旧画面のObserverを解放 (メモリリーク防止)
+  if(scr!=='box' && window._boxObserver){ try{ window._boxObserver.disconnect(); }catch(e){} window._boxObserver=null; }
+  if(scr!=='evolve' && window._evoObserver){ try{ window._evoObserver.disconnect(); }catch(e){} window._evoObserver=null; }
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+scr).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===scr));
@@ -7814,6 +7786,101 @@ function setEvolveAutoFillLow(){
   toast(`⚙ 素材${state.evolveMaterials.length}枚を装填（最下位OVR優先）`);
 }
 
+// V43: EVOLVE picker をBOX方式に — ページング + tinyサムネ + Observer
+let _evoPickerPage = 0;
+let _evoPickerList = [];
+let EVO_PAGE_SIZE = 12;
+try{
+  const eps = localStorage.getItem('mae_evo_page_size');
+  if(eps && [6,12,24].includes(parseInt(eps,10))) EVO_PAGE_SIZE = parseInt(eps,10);
+}catch(e){}
+function evoGotoPage(p){
+  p = parseInt(p, 10);
+  if(isNaN(p)) return;
+  const totalPages = Math.max(1, Math.ceil(_evoPickerList.length / EVO_PAGE_SIZE));
+  if(p < 0) p = 0;
+  if(p >= totalPages) p = totalPages - 1;
+  _evoPickerPage = p;
+  _renderEvoPickerPage();
+  try{ window.scrollTo({top: 0, behavior: 'smooth'}); }catch(e){}
+}
+function setEvoPageSize(n){
+  EVO_PAGE_SIZE = n;
+  try{ localStorage.setItem('mae_evo_page_size', String(n)); }catch(e){}
+  _evoPickerPage = 0;
+  _renderEvoPickerPage();
+}
+
+function _renderEvoPickerPage(){
+  const grid = document.getElementById('evo-target-grid');
+  if(!grid) return;
+  const list = _evoPickerList;
+  const totalPages = Math.max(1, Math.ceil(list.length / EVO_PAGE_SIZE));
+  if(_evoPickerPage < 0) _evoPickerPage = 0;
+  if(_evoPickerPage >= totalPages) _evoPickerPage = totalPages - 1;
+  const start = _evoPickerPage * EVO_PAGE_SIZE;
+  const end = Math.min(list.length, start + EVO_PAGE_SIZE);
+
+  // 旧Observer解除 + DOM完全クリア (メモリリーク防止)
+  if(window._evoObserver){ try{ window._evoObserver.disconnect(); }catch(e){} window._evoObserver = null; }
+  grid.querySelectorAll('img').forEach(img => { img.removeAttribute('src'); });
+  grid.innerHTML = '';
+  const oldPager = document.getElementById('evo-pager');
+  if(oldPager) oldPager.remove();
+
+  const rates = {1:100,2:95,3:85,4:65,5:50,6:25,7:12,8:7,9:4,10:2};
+  const frag = document.createDocumentFragment();
+  for(let i = start; i < end; i++){
+    const m = list[i];
+    const nextEvo = (m.evo||0) + 1;
+    const baseRate = rates[nextEvo] || 0;
+    const cell = document.createElement('div');
+    cell.className = 'evo-cell box-cell';  // box-cellでBOXと同じCSS最適化を継承
+    cell.setAttribute('data-uid', m.uid);
+    cell.style.cssText = 'cursor:pointer;position:relative;content-visibility:auto;contain-intrinsic-size:0 200px;';
+    cell.innerHTML = `
+      ${cardHtml(m,'mini',{tiny:true}).replace(/onclick="[^"]+"/,'')}
+      <div style="position:absolute;bottom:18px;left:3px;right:3px;background:linear-gradient(90deg,#b964ff,#7b2ff7);color:#fff;font-size:8px;text-align:center;padding:2px;font-weight:900;border-radius:4px;border:1px solid #fff5;pointer-events:none;">
+        ${nextEvo===11?'MAX':'→ +'+nextEvo+' ('+baseRate+'%)'}
+      </div>
+    `;
+    // タップでフォーカス→対象設定 (BOXと同じ流れ)
+    cell.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      grid.querySelectorAll('.evo-cell.tap-focused').forEach(el => el.classList.remove('tap-focused'));
+      cell.classList.add('tap-focused');
+      setTimeout(() => { try{ setEvolveTarget(m.uid); }catch(e){} }, 220);
+    });
+    frag.appendChild(cell);
+  }
+  grid.appendChild(frag);
+  grid.querySelectorAll('img').forEach(img => { img.loading='lazy'; img.decoding='async'; });
+
+  // IntersectionObserver (off-screen クラスのみ — BOXと同じ)
+  if('IntersectionObserver' in window){
+    window._evoObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(e=> e.target.classList.toggle('off-screen', !e.isIntersecting));
+    }, {root:null, rootMargin:'100px'});
+    grid.querySelectorAll('.evo-cell').forEach(el => window._evoObserver.observe(el));
+  }
+
+  // ページャUI
+  const pager = document.createElement('div');
+  pager.id = 'evo-pager';
+  pager.style.cssText = 'grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:6px;margin:14px 0 4px;flex-wrap:wrap;';
+  pager.innerHTML = `
+    <button onclick="evoGotoPage(0)" ${_evoPickerPage<=0?'disabled':''} style="padding:8px 10px;border-radius:8px;border:none;cursor:pointer;background:${_evoPickerPage<=0?'#333':'linear-gradient(135deg,#7b2ff7,#00d4ff)'};color:#fff;font-weight:900;font-size:11px;opacity:${_evoPickerPage<=0?0.4:1};">⏮ 最初</button>
+    <button onclick="evoGotoPage(${_evoPickerPage-1})" ${_evoPickerPage<=0?'disabled':''} style="padding:8px 12px;border-radius:8px;border:none;cursor:pointer;background:${_evoPickerPage<=0?'#333':'linear-gradient(135deg,#7b2ff7,#00d4ff)'};color:#fff;font-weight:900;font-size:11px;opacity:${_evoPickerPage<=0?0.4:1};">◀ 前</button>
+    <div style="background:#0a0a14;border:1px solid #444;padding:6px 14px;border-radius:8px;font-size:12px;color:#fff;font-weight:900;letter-spacing:1px;">
+      <input type="number" id="evo-page-input" min="1" max="${totalPages}" value="${_evoPickerPage+1}" onchange="evoGotoPage(this.value-1)" style="width:48px;background:transparent;border:none;color:#ffd700;font-weight:900;text-align:right;font-size:13px;"> / ${totalPages}
+    </div>
+    <button onclick="evoGotoPage(${_evoPickerPage+1})" ${_evoPickerPage>=totalPages-1?'disabled':''} style="padding:8px 12px;border-radius:8px;border:none;cursor:pointer;background:${_evoPickerPage>=totalPages-1?'#333':'linear-gradient(135deg,#ff6b35,#ffd700)'};color:#000;font-weight:900;font-size:11px;opacity:${_evoPickerPage>=totalPages-1?0.4:1};">次 ▶</button>
+    <button onclick="evoGotoPage(${totalPages-1})" ${_evoPickerPage>=totalPages-1?'disabled':''} style="padding:8px 10px;border-radius:8px;border:none;cursor:pointer;background:${_evoPickerPage>=totalPages-1?'#333':'linear-gradient(135deg,#ff6b35,#ffd700)'};color:#000;font-weight:900;font-size:11px;opacity:${_evoPickerPage>=totalPages-1?0.4:1};">最後 ⏭</button>
+    <div style="grid-column:1/-1;width:100%;text-align:center;font-size:9px;opacity:0.6;margin-top:4px;">${start+1}〜${end} 表示 / 全 ${list.length} 体 (1ページ${EVO_PAGE_SIZE}体)</div>
+  `;
+  grid.appendChild(pager);
+}
+
 function renderEvolve(){
   const c = document.getElementById('evolve-content');
   if(!state.evolveTarget){
@@ -7865,7 +7932,13 @@ function renderEvolve(){
         </div>
       </div>
 
-      <div class="section-title">進化対象を選択 (${candidates.length}体)</div>
+      <div class="section-title" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span>進化対象を選択 (${candidates.length}体)</span>
+        <span style="margin-left:auto;font-size:9px;opacity:0.6;">1ページ</span>
+        <button onclick="setEvoPageSize(6)" style="padding:3px 8px;border-radius:6px;border:1px solid #444;background:${EVO_PAGE_SIZE===6?'#7b2ff7':'#1a1a2e'};color:#fff;font-size:10px;font-weight:900;cursor:pointer;">6</button>
+        <button onclick="setEvoPageSize(12)" style="padding:3px 8px;border-radius:6px;border:1px solid #444;background:${EVO_PAGE_SIZE===12?'#7b2ff7':'#1a1a2e'};color:#fff;font-size:10px;font-weight:900;cursor:pointer;">12</button>
+        <button onclick="setEvoPageSize(24)" style="padding:3px 8px;border-radius:6px;border:1px solid #444;background:${EVO_PAGE_SIZE===24?'#7b2ff7':'#1a1a2e'};color:#fff;font-size:10px;font-weight:900;cursor:pointer;">24</button>
+      </div>
       <div class="inv-grid" id="evo-target-grid"></div>
 
       <div style="margin-top:14px;padding:10px;background:rgba(78,205,196,0.08);border:1px dashed #4ecdc466;border-radius:8px;font-size:10px;line-height:1.7;opacity:0.85;">
@@ -7876,22 +7949,10 @@ function renderEvolve(){
         ・10進到達カードはマーケットで <b style="color:#ff6bff;">超高額</b> で取引される
       </div>
     `;
-    const grid = document.getElementById('evo-target-grid');
-    grid.innerHTML = candidates.map(m => {
-      const nextEvo = (m.evo||0) + 1;
-      const rates = {1:100,2:95,3:85,4:65,5:50,6:25,7:12,8:7,9:4,10:2};
-      const baseRate = rates[nextEvo] || 0;
-      return `
-        <div class="evo-cell" onclick="setEvolveTarget(${m.uid})" style="cursor:pointer;position:relative;content-visibility:auto;contain-intrinsic-size:0 220px;">
-          ${cardHtml(m,'mini').replace(/onclick="[^"]+"/,'')}
-          <div style="position:absolute;bottom:18px;left:3px;right:3px;background:linear-gradient(90deg,#b964ff,#7b2ff7);color:#fff;font-size:8px;text-align:center;padding:2px;font-weight:900;border-radius:4px;border:1px solid #fff5;">
-            ${nextEvo===11?'MAX':'→ +'+nextEvo+' ('+baseRate+'%)'}
-          </div>
-        </div>
-      `;
-    }).join('');
-    // lazy 画像
-    grid.querySelectorAll('.evo-cell img').forEach(img => { img.loading = 'lazy'; img.decoding = 'async'; });
+    // V43: ページング適用
+    _evoPickerList = candidates;
+    _evoPickerPage = 0;
+    _renderEvoPickerPage();
     return;
   }
   const m = state.monsters.find(x=>x.uid===state.evolveTarget);
@@ -7993,21 +8054,29 @@ function openMaterialPicker(slot){
       return b.ovr-a.ovr;
     });
 
+  // V43: 一括選択を推奨 — 単発pickerは最大96体に制限(メモリ対策)
+  const MAX_SINGLE_PICKER = 96;
+  const truncated = candidates.length > MAX_SINGLE_PICKER;
+  const shown = truncated ? candidates.slice(0, MAX_SINGLE_PICKER) : candidates;
+
   const c = document.getElementById('modal-content');
   c.innerHTML = `
     <button class="close-btn" onclick="closeModal()">✕</button>
     <div style="font-size:13px;font-weight:900;margin-bottom:10px;text-align:center;">素材を選択 (枠 ${slot+1}/5)</div>
-    <div style="font-size:10px;opacity:0.6;text-align:center;margin-bottom:10px;">同種「${m.name}」が高ゲージ</div>
+    <div style="font-size:10px;opacity:0.6;text-align:center;margin-bottom:10px;">同種「${m.name}」が高ゲージ${truncated?` <span style="color:#ff6b35;">(${shown.length}/${candidates.length}体表示)</span>`:''}</div>
+    ${truncated?`<div style="background:rgba(123,47,247,0.2);border:1px solid #7b2ff7;border-radius:6px;padding:6px 10px;font-size:10px;text-align:center;margin-bottom:8px;">💡 全部から選びたい時は <b style="color:#ffd700;">⚡一括選択</b> を使ってね</div>`:''}
     <div class="inv-grid" style="grid-template-columns:repeat(3,1fr);max-height:60vh;overflow-y:auto;">
-      ${candidates.length === 0 ? '<div class="empty" style="grid-column:1/-1;">素材になるモンスターがいません</div>' : candidates.map(x=>`
-        <div onclick="addMaterial(${slot},${x.uid})" style="cursor:pointer;position:relative;">
-          ${cardHtml(x,'mini').replace(/onclick="[^"]+"/,'')}
-          ${x.spId===m.spId?'<div style="position:absolute;top:0;left:0;right:0;background:#ff1e5a;color:#fff;font-size:8px;text-align:center;padding:1px;font-weight:900;">同種!</div>':''}
+      ${candidates.length === 0 ? '<div class="empty" style="grid-column:1/-1;">素材になるモンスターがいません</div>' : shown.map(x=>`
+        <div class="box-cell" onclick="addMaterial(${slot},${x.uid})" style="cursor:pointer;position:relative;">
+          ${cardHtml(x,'mini',{tiny:true}).replace(/onclick="[^"]+"/,'')}
+          ${x.spId===m.spId?'<div style="position:absolute;top:0;left:0;right:0;background:#ff1e5a;color:#fff;font-size:8px;text-align:center;padding:1px;font-weight:900;pointer-events:none;">同種!</div>':''}
         </div>
       `).join('')}
     </div>
   `;
   document.getElementById('modal').classList.add('active');
+  // 画像をlazy + asyncで読み込み
+  c.querySelectorAll('img').forEach(img => { img.loading='lazy'; img.decoding='async'; });
 }
 function addMaterial(slot,uid){
   state.evolveMaterials[slot] = uid;
@@ -8057,13 +8126,14 @@ function renderBulkPicker(m, candidates, picked){
     gauge = Math.min(100, gauge + val);
   });
 
+  // V43: bulk picker も tinyサムネ + box-cell でiOSメモリ軽減
   const gridHtml = candidates.map(x=>{
     const idx = picked.indexOf(x.uid);
     const isPicked = idx >= 0;
     const imp = getMonsterImportance(x);
     return `
-      <div class="bulk-picker-item ${isPicked?'selected':''} ${imp?'is-important':''}" onclick="togglePickMaterial(${m.uid},${x.uid})">
-        ${cardHtml(x,'mini').replace(/onclick="[^"]+"/,'')}
+      <div class="bulk-picker-item box-cell ${isPicked?'selected':''} ${imp?'is-important':''}" onclick="togglePickMaterial(${m.uid},${x.uid})">
+        ${cardHtml(x,'mini',{tiny:true}).replace(/onclick="[^"]+"/,'')}
         ${x.spId===m.spId?'<div class="same-tag">同種 +30%</div>':''}
         ${imp ? `<div class="warn-tag ${imp}">${imp==='critical'?'⚠ 高レア':'⚠ 重要'}</div>` : ''}
         ${isPicked?`<div class="pick-num">${idx+1}</div>`:''}
@@ -8103,6 +8173,8 @@ function renderBulkPicker(m, candidates, picked){
     grid.scrollTop = prevScroll;
     // Track scroll changes
     grid.addEventListener('scroll', ()=>{ window._bulkScroll = grid.scrollTop; });
+    // V43: 画像を lazy + async デコード
+    grid.querySelectorAll('img').forEach(img => { img.loading='lazy'; img.decoding='async'; });
   }
 }
 
