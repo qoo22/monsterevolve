@@ -149,7 +149,7 @@ img{-webkit-user-drag:none;}
   position:absolute;inset:0;
   width:100%;height:100%;
   object-fit:cover;
-  object-position:center 35%;  /* 上半身寄りで主役を確実に見せる */
+  object-position:center center;  /* 上半身寄りで主役を確実に見せる */
   z-index:0;
 }
 .home-banner-slide .banner-overlay{
@@ -1235,88 +1235,90 @@ img{-webkit-user-drag:none;}
   filter:drop-shadow(0 0 28px #ff00ff);
   width:260px;height:260px;
 }
+/* ===== V35: GOD ガチャ球 — MYTHIC風虹色 + GODの圧倒的スケール =====
+   MYTHICの虹グロー (白→マゼンタ→金→シアン) をベースに、
+   GOD専用の追加色(緑/紫)と倍のサイズ + ゴールドオーラを纏わせる */
 .orb.tier-GOD{
   background:
-    radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), transparent 45%),
+    /* 中央のキラハイライト */
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.95), transparent 50%),
+    /* 虹色コニックグラデで MYTHICっぽさを継承 */
     conic-gradient(from 0deg,
-      #ffd700 0%,
-      #ff00ff 12%,
-      #00d4ff 24%,
-      #4cff7a 36%,
-      #ffd700 48%,
-      #ff6b35 60%,
-      #ff00ff 72%,
-      #00d4ff 84%,
-      #ffd700 100%);
-  background-size:100% 100%, 300% 300%;
+      #fff 0%,
+      #ffd700 12%,
+      #ff00ff 25%,
+      #b14cff 38%,
+      #00d4ff 50%,
+      #4cff7a 62%,
+      #ffd700 75%,
+      #ff6bff 87%,
+      #fff 100%);
+  background-size:100% 100%, 220% 220%;
+  /* 2アニメ維持 (処理軽量) */
   animation:
-    orbPulse 0.18s alternate infinite,
-    orbRotate 0.6s linear infinite,
-    godShift 1.2s linear infinite,
-    godAuraPulse 0.9s ease-in-out infinite;
+    orbRotate 0.9s linear infinite,
+    godRainbowPulse 1.3s ease-in-out infinite;
+  /* MYTHIC風の多色シャドウ + GODはさらに金箔オーラ追加 */
   box-shadow:
-    0 0 60px #fff,
-    0 0 140px #ffd700,
-    0 0 240px #ff00ff,
-    0 0 360px #00d4ff,
-    0 0 500px rgba(255,255,255,0.7),
-    inset 0 0 80px rgba(255,255,255,0.85);
+    0 0 80px #fff,
+    0 0 180px #ff00ff,
+    0 0 280px #ffd700,
+    0 0 380px #00d4ff,
+    inset 0 0 60px rgba(255,255,255,0.85);
   filter:
-    drop-shadow(0 0 40px #fff)
+    drop-shadow(0 0 30px #fff)
     drop-shadow(0 0 60px #ffd700)
     drop-shadow(0 0 90px #ff00ff)
-    saturate(1.6) brightness(1.15);
+    saturate(1.4) brightness(1.1);
   width:340px;height:340px;
   border:4px solid #fff;
   position:relative;
 }
-/* 多重ハロー: 外側を逆回転する別レイヤー */
+/* GOD専用ハロー — MYTHIC にはない逆回転の追加リング */
 .orb.tier-GOD::before{
-  content:"";position:absolute;inset:-30px;border-radius:50%;pointer-events:none;
-  background:conic-gradient(from 180deg, transparent, #ffd700, transparent, #ff00ff, transparent, #00d4ff, transparent, #fff, transparent);
-  filter:blur(8px);opacity:0.85;
-  animation:godHaloSpin 2.5s linear infinite reverse;
-  mix-blend-mode:screen;
-}
-.orb.tier-GOD::after{
-  content:"";position:absolute;inset:-60px;border-radius:50%;pointer-events:none;
-  background:conic-gradient(from 0deg, transparent 0deg, #fff 8deg, transparent 22deg, #ffd700 35deg, transparent 50deg, #ff6bff 63deg, transparent 78deg, #4cff7a 92deg, transparent 110deg, #00d4ff 125deg, transparent 140deg);
-  filter:blur(3px);opacity:0.6;
-  animation:godHaloSpin 1.8s linear infinite;
+  content:"";position:absolute;inset:-32px;border-radius:50%;pointer-events:none;
+  background:conic-gradient(from 180deg,
+    transparent, #ffd700, transparent, #ff00ff, transparent, #00d4ff, transparent, #4cff7a, transparent, #fff, transparent);
+  filter:blur(8px);opacity:0.8;
+  animation:godHaloSpin 3s linear infinite reverse;
   mix-blend-mode:screen;
 }
 @keyframes godHaloSpin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
-@keyframes godAuraPulse{
-  0%,100%{filter:drop-shadow(0 0 40px #fff) drop-shadow(0 0 60px #ffd700) drop-shadow(0 0 90px #ff00ff) saturate(1.6) brightness(1.15);}
-  50%{filter:drop-shadow(0 0 80px #fff) drop-shadow(0 0 120px #ffd700) drop-shadow(0 0 180px #ff00ff) saturate(2.0) brightness(1.4);}
+@keyframes godRainbowPulse{
+  0%,100%{
+    filter:drop-shadow(0 0 30px #fff) drop-shadow(0 0 60px #ffd700) drop-shadow(0 0 90px #ff00ff) saturate(1.4) brightness(1.1);
+  }
+  50%{
+    filter:drop-shadow(0 0 50px #fff) drop-shadow(0 0 100px #ffd700) drop-shadow(0 0 150px #ff00ff) drop-shadow(0 0 180px #00d4ff) saturate(1.7) brightness(1.3);
+  }
 }
 .beam.tier-GOD{
-  opacity:1;animation-duration:0.7s;
+  opacity:0.95;animation-duration:1.5s;
+  /* V34: カラー数 7→3 — gold + deep amethyst + ivory のみ */
   background:conic-gradient(from 0deg,
-    transparent,#fff 4deg,transparent 14deg,
-    #ffd700 22deg,transparent 32deg,
-    #ff00ff 40deg,transparent 50deg,
-    #00d4ff 58deg,transparent 68deg,
-    #4cff7a 76deg,transparent 86deg,
-    #ff6b35 94deg,transparent 104deg,
-    #fff 112deg,transparent 122deg);
-  filter:blur(2px) saturate(1.8);
+    transparent,#fff8e0 6deg,transparent 20deg,
+    #ffd700 32deg,transparent 46deg,
+    #5b2db8 58deg,transparent 72deg,
+    #ffd700 84deg,transparent 98deg,
+    #fff8e0 110deg,transparent 124deg);
+  filter:blur(2px) saturate(1.1);
 }
-.gacha-stage.bg-GOD{background:radial-gradient(ellipse at center,#fff,#000);animation:bgPulseGod 0.4s infinite;}
+.gacha-stage.bg-GOD{
+  /* V34: 高速点滅(0.4s) → 静かな2.5sパルスに */
+  background:radial-gradient(ellipse at center,#fff8e0 0%,#1a0f3a 60%,#000 100%);
+  animation:bgPulseGod 2.5s ease-in-out infinite;
+}
 @keyframes bgPulseGod{
-  0%{background:radial-gradient(ellipse at center,#fff,#000);}
-  25%{background:radial-gradient(ellipse at center,#ffd700,#000);}
-  50%{background:radial-gradient(ellipse at center,#ff00ff,#000);}
-  75%{background:radial-gradient(ellipse at center,#00d4ff,#000);}
-  100%{background:radial-gradient(ellipse at center,#fff,#000);}
+  0%,100%{background:radial-gradient(ellipse at center,#fff8e0 0%,#1a0f3a 60%,#000 100%);}
+  50%{background:radial-gradient(ellipse at center,#ffd700 0%,#5b2db8 55%,#000 100%);}
 }
 .flash.bang-god{
   animation:bangGod 1.2s forwards;
-  background:radial-gradient(circle,#fff 0%,#ffd700 25%,#ff00ff 55%,#000 100%);
+  background:radial-gradient(circle,#fff8e0 0%,#ffd700 20%,#5b2db8 55%,#000 100%);
 }
 @keyframes bangGod{
-  0%{opacity:1;transform:scale(1);filter:brightness(2);}
-  30%{opacity:1;transform:scale(2.5);filter:brightness(3);}
+  0%{opacity:1;transform:scale(1);filter:brightness(1.8);}
+  30%{opacity:1;transform:scale(2.5);filter:brightness(2.3);}
   100%{opacity:0;transform:scale(4);}
 }
 @keyframes orbRotate{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
@@ -3663,7 +3665,7 @@ function resolveImg(path){
 }
 
 
-const UI_IMG = {"splash_bg":"images/splash_v20.jpg","title_logo":"images/title_logo_v20b.jpg","pack_legendary":"images/pack_legendary_hd_v14.jpg","pack_element":"images/pack_element_hd_v14.jpg","pack_evo":"images/pack_evo_hd_v14.jpg","pack_limited":"images/pack_limited_hd_v14.jpg","pack_godpack":"images/pack_godpack_hd_v14.jpg","pack_dragon":"images/pack_dragon_hd_v14.jpg","pack_divine":"images/pack_divine_hd_v14.jpg","pack_shadow":"images/pack_shadow_hd_v14.jpg","home_banner_legendary":"images/banner_legendary_v20.jpg","home_banner_event":"images/banner_event_v20.jpg","home_banner_pvp":"images/banner_pvp_v20.jpg","tile_gacha":"images/tile_gacha_v20.jpg","tile_battle":"images/tile_quest_v20.jpg","tile_evolve":"images/tile_evolve_v20.jpg","tile_market":"images/tile_market_v20.jpg"};
+const UI_IMG = {"splash_bg":"images/splash_v20.jpg","title_logo":"images/title_logo_v20b.jpg","pack_legendary":"images/pack_legendary_hd_v14.jpg","pack_element":"images/pack_element_hd_v14.jpg","pack_evo":"images/pack_evo_hd_v14.jpg","pack_limited":"images/pack_limited_hd_v14.jpg","pack_godpack":"images/pack_godpack_hd_v14.jpg","pack_dragon":"images/pack_dragon_hd_v14.jpg","pack_divine":"images/pack_divine_hd_v14.jpg","pack_shadow":"images/pack_shadow_hd_v14.jpg","home_banner_legendary":"images/banner_legendary_v33.jpg","home_banner_event":"images/banner_event_v33.jpg","home_banner_pvp":"images/banner_pvp_v33.jpg","tile_gacha":"images/tile_gacha_v20.jpg","tile_battle":"images/tile_quest_v20.jpg","tile_evolve":"images/tile_evolve_v20.jpg","tile_market":"images/tile_market_v20.jpg"};
 const ULT_IMG = {"ult_inferno":"images/img_df1234f20561.jpg","ult_tsunami":"images/img_233f743b5005.jpg","ult_nature":"images/img_11a4afa9c925.jpg","ult_void":"images/img_06572bfc88f8.jpg","ult_holy":"images/img_3c6f5b275517.jpg","ult_thunder":"images/img_10b2fdf7b87d.jpg","ult_quantum":"images/img_f149084388ce.jpg","ult_cosmic":"images/img_03ee0b1e6186.jpg"};
 
 /* ============================================================
