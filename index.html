@@ -137,26 +137,26 @@ img{-webkit-user-drag:none;}
   box-shadow:0 8px 24px rgba(0,0,0,0.6),0 0 0 1px #ffd70044;
 }
 .home-banner-slide{
+  /* V27: <img>タグベースに切り替え - 位置ずれ完全解消 */
   position:absolute;inset:0;
-  background-size:cover;
-  background-position:center 38%;  /* V24: 中央より少し上に寄せる (主役被写体が上半身にあるため) */
-  background-repeat:no-repeat;
-  opacity:0;transition:opacity 1s ease;
+  opacity:0;transition:opacity 0.6s ease;
   display:flex;align-items:flex-end;padding:18px;
-  transform-origin:center 38%;     /* スケール中心も同じ位置に */
+  overflow:hidden;
 }
-.home-banner-slide.active{
-  opacity:1;
-  animation:bannerKenBurns 18s ease-in-out infinite alternate;  /* V24: 穏やかに往復 */
+.home-banner-slide.active{opacity:1;}
+.home-banner-slide .banner-img{
+  /* バナーの中央を固定表示、Ken Burns削除でずれゼロ */
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center 35%;  /* 上半身寄りで主役を確実に見せる */
+  z-index:0;
 }
-@keyframes bannerKenBurns{
-  0%{transform:scale(1) translateY(0);}
-  100%{transform:scale(1.04) translateY(-2px);}   /* V24: 1.08→1.04 ズーム控えめ */
+.home-banner-slide .banner-overlay{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,transparent 35%,rgba(0,0,0,0.85) 100%);
 }
-.home-banner-slide::before{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(0,0,0,0.1) 0%,transparent 30%,rgba(0,0,0,0.85) 100%);
-}
+.home-banner-slide::before{content:none;}  /* 旧オーバーレイ無効化 */
 .home-banner-slide .banner-content{position:relative;z-index:2;color:#fff;}
 .home-banner-slide h2{font-size:22px;font-weight:900;text-shadow:0 2px 8px #000;letter-spacing:1px;}
 .home-banner-slide p{font-size:12px;opacity:0.95;margin-top:4px;text-shadow:0 1px 4px #000;line-height:1.4;}
@@ -3111,10 +3111,8 @@ img{-webkit-user-drag:none;}
   position:relative;
 }
 .home-banner-slide::after{
-  /* 上下の半透明グラデでテキスト可読性UP */
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:
-    linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 30%, transparent 60%, rgba(0,0,0,0.85) 100%);
+  /* V27: img+overlay 方式に変更したため無効化 */
+  content:none;
 }
 .home-banner-slide h2{
   background:linear-gradient(180deg,#fff,#ffd700);
@@ -3372,6 +3370,17 @@ img{-webkit-user-drag:none;}
     <button onclick="sellAllLowOVR()" style="flex:1;min-width:48%;padding:8px;border-radius:8px;font-size:11px;font-weight:900;background:linear-gradient(135deg,#ff1e5a,#ff6b35);color:#fff;border:none;cursor:pointer;">💀 全売却 OVR≤130</button>
     <button onclick="openTradeModal()" style="flex:1;min-width:48%;padding:8px;border-radius:8px;font-size:11px;font-weight:900;background:linear-gradient(135deg,#7b2ff7,#00d4ff);color:#fff;border:none;cursor:pointer;">🔄 トレード</button>
     <button onclick="openCollectionDex()" style="flex:1;min-width:48%;padding:8px;border-radius:8px;font-size:11px;font-weight:900;background:linear-gradient(135deg,#4cff7a,#00d4ff);color:#000;border:none;cursor:pointer;">📚 図鑑</button>
+  </div>
+  <!-- V26: BOX 軽量化トグル (iOSクラッシュ防止) -->
+  <div style="display:flex;gap:6px;margin:6px 0;align-items:center;font-size:10px;opacity:0.85;">
+    <span style="color:#888;">🛠 軽量化:</span>
+    <button onclick="toggleBoxImages()" id="box-img-toggle" style="padding:4px 8px;border-radius:6px;border:1px solid #555;background:#1a1a3e;color:#fff;font-size:10px;cursor:pointer;">🖼 画像</button>
+    <span style="color:#888;">|</span>
+    <span style="color:#888;">ページ:</span>
+    <button onclick="setBoxPageSize(6)" style="padding:4px 8px;border-radius:6px;border:1px solid #555;background:#1a1a3e;color:#fff;font-size:10px;cursor:pointer;">6</button>
+    <button onclick="setBoxPageSize(12)" style="padding:4px 8px;border-radius:6px;border:1px solid #555;background:#1a1a3e;color:#fff;font-size:10px;cursor:pointer;">12</button>
+    <button onclick="setBoxPageSize(24)" style="padding:4px 8px;border-radius:6px;border:1px solid #555;background:#1a1a3e;color:#fff;font-size:10px;cursor:pointer;">24</button>
+    <span style="color:#888;font-size:9px;margin-left:auto;">iPhone落ち時は画像OFFか6体に</span>
   </div>
   <div class="section-title">所持モンスター <span style="color:#fff;font-size:10px;opacity:0.6;margin-left:6px;" id="box-count"></span></div>
   <div id="box-cap-banner"></div>
@@ -6321,15 +6330,36 @@ function starHtml(n){
   return '★'.repeat(n);
 }
 
-function artHtml(m){
-  // If AI-generated image exists, use it; else fall back to emoji
-  if(m.img){
-    return `<div class="art has-img"><img src="${m.img}" alt="${m.name}" loading="lazy" onerror="this.parentElement.innerHTML='<span>'+'${m.art}'+'</span>'"></div>`;
+// V23+V26+V28: 3段階画像
+//   - 元画像 (1024x): 詳細モーダル/big-card用 (~4MB/枚 memory)
+//   - thumbs/ (384x): 進化候補画面など mini で使う中サイズ (~0.4MB)
+//   - tiny/ (192x):    BOX用 超ミニサムネ (~0.1MB) ← iPhoneでも安全
+function getThumbPath(p){
+  if(!p) return p;
+  if(p.indexOf('images/thumbs/') >= 0 || p.indexOf('images/tiny/') >= 0) return p;
+  return p.replace(/^images\//, 'images/thumbs/');
+}
+function getTinyPath(p){
+  if(!p) return p;
+  if(p.indexOf('images/tiny/') >= 0) return p;
+  // thumbs パスからも tiny へ変換
+  return p.replace(/^images\/thumbs\//, 'images/tiny/').replace(/^images\//, 'images/tiny/');
+}
+function artHtml(m, opts){
+  const noImg = opts && opts.noImg;
+  const useTiny = opts && opts.tiny;
+  const useSmall = opts && opts.small;
+  if(m.img && !noImg){
+    let src;
+    if(useTiny)       src = getTinyPath(m.img);
+    else if(useSmall) src = getThumbPath(m.img);
+    else              src = m.img;
+    return `<div class="art has-img"><img src="${src}" alt="${m.name}" loading="lazy" decoding="async" width="180" height="240" onerror="this.parentElement.innerHTML='<span>'+'${m.art}'+'</span>'"></div>`;
   }
   return `<div class="art"><span>${m.art}</span></div>`;
 }
 
-function cardHtml(m,size='mini'){
+function cardHtml(m,size='mini',artOpts){
   const r = m.rarity;
   const cls = ['card','frame-'+size,'r-'+r];
   if(['SSR','UR','LR','GOD'].includes(r))cls.push('shimmer');
@@ -6338,7 +6368,6 @@ function cardHtml(m,size='mini'){
   if(m.mythic || m.ovr===136)cls.push('mythic');
   if(m.img)cls.push('has-art');
   const evoBadge = m.evo>0?`<div class="evo-badge">+${m.evo}</div>`:'';
-  // 必殺技アイコン行 (カード下部) — 各技のicon + 必殺技には金枠
   let skillRowHtml = '';
   if(m.skills && m.skills.length){
     const skills = m.skills.slice(0, 4).map(sid => SKILLS.find(x=>x.id===sid)).filter(Boolean);
@@ -6349,6 +6378,7 @@ function cardHtml(m,size='mini'){
   }
   const stars = getStars(m);
   const typeIco = TYPE_ICONS[m.type]||'❖';
+  // V28: artOpts.tiny=true で BOX 超ミニサムネを使用
   return `
     <div class="${cls.join(' ')}" onclick="showDetail(${m.uid})" data-uid="${m.uid}">
       <div class="ovr">${m.ovr}</div>
@@ -6356,7 +6386,7 @@ function cardHtml(m,size='mini'){
       <div class="rarity-tag">${r}</div>
       <div class="stars-tag">${starHtml(stars)}</div>
       ${evoBadge}
-      ${artHtml(m)}
+      ${artHtml(m, artOpts || {small: size === 'mini'})}
       <div class="name">${m.name}</div>
       ${skillRowHtml}
     </div>
@@ -6365,10 +6395,29 @@ function cardHtml(m,size='mini'){
 
 // ---------- BOX ----------
 let boxFilter = 'all';
-// ===== V25: BOX をページ式に — 毎回DOMを完全リフレッシュしてメモリリーク防止 =====
-const BOX_PAGE_SIZE = 24;
+// ===== V26: BOX 超軽量化 — 12体/ページ + 画像OFFモード =====
+let BOX_PAGE_SIZE = 12;  // V26: 24→12 (iOS Safari メモリ限界対応)
 let _boxCurrentPage = 0;
 let _boxFullList = [];
+let _boxImagesEnabled = true;
+// localStorage から復元
+try{
+  const saved = localStorage.getItem('mae_box_imgs');
+  if(saved === '0') _boxImagesEnabled = false;
+  const ps = localStorage.getItem('mae_box_page_size');
+  if(ps && [6,12,24].includes(parseInt(ps,10))) BOX_PAGE_SIZE = parseInt(ps,10);
+}catch(e){}
+function toggleBoxImages(){
+  _boxImagesEnabled = !_boxImagesEnabled;
+  try{ localStorage.setItem('mae_box_imgs', _boxImagesEnabled?'1':'0'); }catch(e){}
+  renderBox();
+}
+function setBoxPageSize(n){
+  BOX_PAGE_SIZE = n;
+  try{ localStorage.setItem('mae_box_page_size', String(n)); }catch(e){}
+  _boxCurrentPage = 0;
+  _renderBoxPage();
+}
 
 function renderBox(){
   const grid = document.getElementById('box-grid');
@@ -6428,7 +6477,12 @@ function _renderBoxPage(){
   for(let i = start; i < end; i++){
     const wrap = document.createElement('div');
     wrap.className = 'box-cell';
-    wrap.innerHTML = cardHtml(list[i], 'mini');
+    // V26+V28: BOX は超ミニサムネ (tiny:192px) を使用 — メモリ4倍削減
+    if(!_boxImagesEnabled){
+      wrap.innerHTML = cardHtml(list[i], 'mini', {noImg: true});
+    } else {
+      wrap.innerHTML = cardHtml(list[i], 'mini', {tiny: true});
+    }
     frag.appendChild(wrap);
   }
   grid.appendChild(frag);
@@ -11730,9 +11784,12 @@ function renderHomeBanners(){
   const car = document.getElementById('home-banner-carousel');
   const dots = document.getElementById('home-banner-dots');
   if(!car) return;
+  // V27: background-image から <img> タグに変更 — 位置が確実に揃う
   car.innerHTML = HOME_BANNERS.map((b,i)=>{
     const bg = (typeof UI_IMG !== 'undefined' && UI_IMG[b.imgKey]) ? UI_IMG[b.imgKey] : '';
-    return `<div class="home-banner-slide ${i===0?'active':''}" data-idx="${i}" style="background-image:url('${bg}');">
+    return `<div class="home-banner-slide ${i===0?'active':''}" data-idx="${i}">
+      ${bg ? `<img class="banner-img" src="${bg}" alt="" loading="lazy" decoding="async">` : ''}
+      <div class="banner-overlay"></div>
       <div class="banner-content">
         <div class="banner-tag">${b.tag}</div>
         <h2>${b.h2}</h2>
