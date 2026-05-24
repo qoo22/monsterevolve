@@ -2790,36 +2790,16 @@ img{-webkit-user-drag:none;}
   position:relative;
 }
 .modal-card-show{
-  /* V32: タップ詳細モーダルのカードを大きく + 原本画像 + フル装飾 */
+  /* V33: タップ詳細モーダルのカードを大きく */
   width:260px;aspect-ratio:3/4;margin:0 auto 14px;
   position:relative;
 }
 .modal-card-show .card{
   width:100%;height:100%;
 }
-/* V32: 詳細モーダル内では BOX の簡素化を無効化 */
-.modal-card-show .card .art::before,
-.modal-card-show .card .art::after,
-.modal-card-show .card::before,
-.modal-card-show .card::after{
-  display:initial !important;
-  opacity:1 !important;
-  animation:revert !important;
-}
-.modal-card-show .card.r-GOD,
-.modal-card-show .card.r-GOD .art > span,
-.modal-card-show .card.r-GOD .art.has-img img,
-.modal-card-show .card.r-LR .art > span,
-.modal-card-show .card.r-LR .art.has-img img,
-.modal-card-show .card.r-UR .art > span,
-.modal-card-show .card.mythic .art > span,
-.modal-card-show .card.legendary{
-  animation:revert !important;
-  filter:revert !important;
-}
-.modal-card-show .card.r-GOD.frame-mini{
-  box-shadow:revert !important;
-}
+/* V33: 詳細モーダルは BOX 外なので BOX の最適化は元々適用されない
+   → animation:revert などのoverrideは不要 (むしろアニメを消してしまう)
+   → 何も指定しないことで元の全演出 (godRays/godShift/legpulse 等) が自然に動作 */
 @media (max-width:380px){
   .modal-card-show{width:220px;}
 }
