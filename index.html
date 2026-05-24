@@ -1329,8 +1329,8 @@ body.gacha-fx-light .orb.tier-MYTHIC{
   filter:drop-shadow(0 0 20px rgba(255,215,0,0.7)) !important;
 }
 body.gacha-fx-light .orb.tier-GOD{
-  /* アニメは1つだけ */
-  animation:orbRotate 1.5s linear infinite !important;
+  /* V47: 渦巻き回転は禁止 — 静かなパルスのみ */
+  animation:orbPulse 0.9s ease-in-out alternate infinite !important;
 }
 body.gacha-fx-light .orb.tier-MYTHIC{
   animation:orbRotate 2s linear infinite !important;
@@ -1358,11 +1358,11 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
    - 1 drop-shadow filter
    ::before や追加アニメは無し */
 .orb.tier-GOD{
-  /* V44: ユーザー提供の虹色クリスタル球をそのまま使用 */
-  background:url(images/god_orb_v44.jpg) center/cover;
-  background-size:cover;
-  animation:orbPulse 0.22s alternate infinite,orbRotate 1.2s linear infinite;
-  /* MYTHICの 白+マゼンタ+金+シアン に GOD専用色「ライム緑」を追加 */
+  /* V46: 透明余白をギリギリまでトリミング — 球体がオーラ境目まで大きく見える
+     V47: 渦巻き回転を停止 (orbRotateを外す) — 目が回るのを防ぐ
+          代わりに斜めキラレイヤー(::before)を流す */
+  background:url(images/god_orb_v46.png) center/contain no-repeat transparent;
+  animation:orbPulse 0.6s ease-in-out alternate infinite;  /* 回転なし、ゆったり明滅のみ */
   box-shadow:
     0 0 150px #fff,
     0 0 300px #ff00ff,
@@ -1371,8 +1371,35 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
     0 0 600px #4cff7a;
   filter:drop-shadow(0 0 32px #ffd700);
   width:300px;height:300px;
-  border:5px solid #fff;
+  border:none;
+  border-radius:50%;
   position:relative;
+  overflow:visible;
+}
+/* V47: 斜めに流れるキラレイヤー (godHoloStripe風) — 渦巻き感の代わり */
+.orb.tier-GOD::before{
+  content:"";position:absolute;inset:-4px;
+  border-radius:50%;pointer-events:none;
+  background:linear-gradient(110deg,
+    rgba(255,255,255,0)   0%,
+    rgba(255,255,255,0)   28%,
+    rgba(255,255,255,0.55) 40%,
+    rgba(255,215,0,0.45)  46%,
+    rgba(255,255,255,0.65) 52%,
+    rgba(255,255,255,0)   62%,
+    rgba(255,255,255,0)   100%);
+  background-size:240% 240%;
+  mix-blend-mode:screen;
+  filter:blur(2px) saturate(1.3);
+  animation:godOrbDiagonal 3.6s ease-in-out infinite;
+  -webkit-mask:radial-gradient(circle at center, #000 60%, transparent 78%);
+          mask:radial-gradient(circle at center, #000 60%, transparent 78%);
+  opacity:0.9;
+}
+@keyframes godOrbDiagonal{
+  0%   {background-position:-30% 130%;}
+  50%  {background-position:130% -30%;}
+  100% {background-position:-30% 130%;}
 }
 .beam.tier-GOD{
   opacity:0.95;animation-duration:1.5s;
@@ -1395,13 +1422,21 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
   50%{background:radial-gradient(ellipse at center,#ffd700 0%,#5b2db8 55%,#000 100%);}
 }
 .flash.bang-god{
-  animation:bangGod 1.2s forwards;
-  background:radial-gradient(circle,#fff8e0 0%,#ffd700 20%,#5b2db8 55%,#000 100%);
+  /* V49: 「眩しすぎる」対策 — 明るい白を排除 → 落ち着いた金〜紫グラデ */
+  animation:bangGod 1.4s ease-out forwards;
+  /* 中心の白(#fff8e0)を撤去、彩度を落とした金から紫黒へ */
+  background:radial-gradient(circle,
+    rgba(255,220,140,0.6) 0%,
+    rgba(255,180,80,0.45) 25%,
+    rgba(91,45,184,0.35) 60%,
+    rgba(0,0,0,0.6) 100%);
 }
 @keyframes bangGod{
-  0%{opacity:1;transform:scale(1);filter:brightness(1.8);}
-  30%{opacity:1;transform:scale(2.5);filter:brightness(2.3);}
-  100%{opacity:0;transform:scale(4);}
+  /* opacity 0.7 → 0.3 までさらに半減、scale も控えめに */
+  0%   {opacity:0;    transform:scale(1);    filter:brightness(0.95);}
+  20%  {opacity:0.3;  transform:scale(1.3);  filter:brightness(0.95);}
+  60%  {opacity:0.18; transform:scale(2);    filter:brightness(0.9);}
+  100% {opacity:0;    transform:scale(2.6);  filter:brightness(0.8);}
 }
 @keyframes orbRotate{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 @keyframes orbRainbow{0%{background-position:0% 50%;}100%{background-position:200% 50%;}}
@@ -1416,12 +1451,18 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 }
 .orb.charge{animation:orbCharge 1.4s forwards;}
 @keyframes orbCharge{
+  /* V49: brightness 4 → 1.4 (眩しさ大幅減) */
   0%{transform:scale(1);}
-  60%{transform:scale(0.6);filter:brightness(0.5);}
-  100%{transform:scale(2.5);filter:brightness(4);}
+  60%{transform:scale(0.6);filter:brightness(0.6);}
+  100%{transform:scale(2.5);filter:brightness(1.4);}
 }
 .orb.crack{animation:orbCrack 0.5s forwards;}
-@keyframes orbCrack{0%{transform:scale(1.5);}50%{transform:scale(2.5);filter:brightness(4);}100%{transform:scale(0);opacity:0;}}
+@keyframes orbCrack{
+  /* V49: brightness 4 → 1.3 */
+  0%{transform:scale(1.5);}
+  50%{transform:scale(2.5);filter:brightness(1.3);}
+  100%{transform:scale(0);opacity:0;}
+}
 
 /* Spinning beams */
 .beam{
@@ -1514,6 +1555,29 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
     radial-gradient(circle at center,rgba(255,255,255,0.45),transparent 30%),
     conic-gradient(from 0deg,#ff00ff44,#ffd70044,#00d4ff44,#ffffff66,#ff00ff44,#ffd70044);
   animation-duration:2.5s;
+}
+/* V49: GOD のスポットライトは白の発光を抑制 (チカチカ防止) */
+.reveal-spotlight.tier-GOD{
+  width:760px;height:760px;opacity:0.55;animation-duration:5s;
+  background:
+    radial-gradient(circle at center,rgba(255,215,0,0.25),transparent 35%),
+    conic-gradient(from 0deg,
+      rgba(255,215,0,0.35),
+      rgba(255,107,255,0.3),
+      rgba(76,255,122,0.25),
+      rgba(0,212,255,0.3),
+      rgba(255,215,0,0.35));
+  mix-blend-mode:screen;
+  filter:blur(2px);
+}
+/* V49: GOD のカードハロー — MYTHICの白点滅を排除 */
+.card-halo.tier-GOD{
+  background:radial-gradient(ellipse,
+    rgba(255,215,0,0.55),
+    rgba(255,107,255,0.3) 50%,
+    transparent 75%);
+  opacity:0.55;
+  width:380px;height:520px;
 }
 @keyframes spotlightSpin{0%{transform:translate(-50%,-50%) rotate(0deg);}100%{transform:translate(-50%,-50%) rotate(360deg);}}
 
@@ -4344,8 +4408,9 @@ SPECIES.push(
 (function _applyGodImageUpgrades(){
   const imgs = {
     'quetzalcoatl_serpent': 'images/v12_quetzalcoatl_serpent.jpg',
-    'genesis_prime': 'images/img_681e3136b6cf.jpg',
-    'cosmic_architect': 'images/img_8be0219019ff.jpg',    'obsidian_dragon': 'images/img_1c3f645b2735.jpg',
+    // V48: genesis_prime / cosmic_architect を v12 画像に差し替え
+    'genesis_prime': 'images/v12_genesis_prime.jpg',
+    'cosmic_architect': 'images/v12_cosmic_architect.jpg',    'obsidian_dragon': 'images/img_1c3f645b2735.jpg',
     'divineflame_dragon': 'images/img_cca44d472a56.jpg',
     'frostthunder_dragon': 'images/img_d40205f8d906.jpg',    'celestial_dragon': 'images/img_37f2e96c1987.jpg',    'ryouou_dragon': 'images/img_c9cb59e7f4db.jpg',  };
   for(const [id, dataUri] of Object.entries(imgs)){
@@ -6708,11 +6773,11 @@ function _renderBoxPage(){
   for(let i = start; i < end; i++){
     const wrap = document.createElement('div');
     wrap.className = 'box-cell';
-    // V26+V28: BOX は超ミニサムネ (tiny:192px) を使用 — メモリ4倍削減
+    // V50: 画質を192px→384pxに引き上げ (thumbs)。メモリ4倍だが12体/ページなら安全
     if(!_boxImagesEnabled){
       wrap.innerHTML = cardHtml(list[i], 'mini', {noImg: true});
     } else {
-      wrap.innerHTML = cardHtml(list[i], 'mini', {tiny: true});
+      wrap.innerHTML = cardHtml(list[i], 'mini', {small: true});
     }
     frag.appendChild(wrap);
   }
@@ -7838,8 +7903,9 @@ function _renderEvoPickerPage(){
     cell.className = 'evo-cell box-cell';  // box-cellでBOXと同じCSS最適化を継承
     cell.setAttribute('data-uid', m.uid);
     cell.style.cssText = 'cursor:pointer;position:relative;content-visibility:auto;contain-intrinsic-size:0 200px;';
+    // V50: EVOLVE picker も 384px に引き上げ
     cell.innerHTML = `
-      ${cardHtml(m,'mini',{tiny:true}).replace(/onclick="[^"]+"/,'')}
+      ${cardHtml(m,'mini',{small:true}).replace(/onclick="[^"]+"/,'')}
       <div style="position:absolute;bottom:18px;left:3px;right:3px;background:linear-gradient(90deg,#b964ff,#7b2ff7);color:#fff;font-size:8px;text-align:center;padding:2px;font-weight:900;border-radius:4px;border:1px solid #fff5;pointer-events:none;">
         ${nextEvo===11?'MAX':'→ +'+nextEvo+' ('+baseRate+'%)'}
       </div>
@@ -8068,7 +8134,7 @@ function openMaterialPicker(slot){
     <div class="inv-grid" style="grid-template-columns:repeat(3,1fr);max-height:60vh;overflow-y:auto;">
       ${candidates.length === 0 ? '<div class="empty" style="grid-column:1/-1;">素材になるモンスターがいません</div>' : shown.map(x=>`
         <div class="box-cell" onclick="addMaterial(${slot},${x.uid})" style="cursor:pointer;position:relative;">
-          ${cardHtml(x,'mini',{tiny:true}).replace(/onclick="[^"]+"/,'')}
+          ${cardHtml(x,'mini',{small:true}).replace(/onclick="[^"]+"/,'')}
           ${x.spId===m.spId?'<div style="position:absolute;top:0;left:0;right:0;background:#ff1e5a;color:#fff;font-size:8px;text-align:center;padding:1px;font-weight:900;pointer-events:none;">同種!</div>':''}
         </div>
       `).join('')}
@@ -8126,14 +8192,14 @@ function renderBulkPicker(m, candidates, picked){
     gauge = Math.min(100, gauge + val);
   });
 
-  // V43: bulk picker も tinyサムネ + box-cell でiOSメモリ軽減
+  // V50: bulk picker も 384px (small) に画質UP
   const gridHtml = candidates.map(x=>{
     const idx = picked.indexOf(x.uid);
     const isPicked = idx >= 0;
     const imp = getMonsterImportance(x);
     return `
       <div class="bulk-picker-item box-cell ${isPicked?'selected':''} ${imp?'is-important':''}" onclick="togglePickMaterial(${m.uid},${x.uid})">
-        ${cardHtml(x,'mini',{tiny:true}).replace(/onclick="[^"]+"/,'')}
+        ${cardHtml(x,'mini',{small:true}).replace(/onclick="[^"]+"/,'')}
         ${x.spId===m.spId?'<div class="same-tag">同種 +30%</div>':''}
         ${imp ? `<div class="warn-tag ${imp}">${imp==='critical'?'⚠ 高レア':'⚠ 重要'}</div>` : ''}
         ${isPicked?`<div class="pick-num">${idx+1}</div>`:''}
