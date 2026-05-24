@@ -138,12 +138,21 @@ img{-webkit-user-drag:none;}
 }
 .home-banner-slide{
   position:absolute;inset:0;
-  background-size:cover;background-position:center;
+  background-size:cover;
+  background-position:center 38%;  /* V24: 中央より少し上に寄せる (主役被写体が上半身にあるため) */
+  background-repeat:no-repeat;
   opacity:0;transition:opacity 1s ease;
   display:flex;align-items:flex-end;padding:18px;
+  transform-origin:center 38%;     /* スケール中心も同じ位置に */
 }
-.home-banner-slide.active{opacity:1;animation:bannerKenBurns 12s ease-out forwards;}
-@keyframes bannerKenBurns{0%{transform:scale(1);}100%{transform:scale(1.08);}}
+.home-banner-slide.active{
+  opacity:1;
+  animation:bannerKenBurns 18s ease-in-out infinite alternate;  /* V24: 穏やかに往復 */
+}
+@keyframes bannerKenBurns{
+  0%{transform:scale(1) translateY(0);}
+  100%{transform:scale(1.04) translateY(-2px);}   /* V24: 1.08→1.04 ズーム控えめ */
+}
 .home-banner-slide::before{
   content:"";position:absolute;inset:0;
   background:linear-gradient(180deg,rgba(0,0,0,0.1) 0%,transparent 30%,rgba(0,0,0,0.85) 100%);
@@ -6356,9 +6365,9 @@ function cardHtml(m,size='mini'){
 
 // ---------- BOX ----------
 let boxFilter = 'all';
-// ===== V14: BOX 段階ロード — 初期表示数を抑えて軽量化 =====
-const BOX_PAGE_SIZE = 60;
-let _boxRenderedCount = 0;
+// ===== V25: BOX をページ式に — 毎回DOMを完全リフレッシュしてメモリリーク防止 =====
+const BOX_PAGE_SIZE = 24;
+let _boxCurrentPage = 0;
 let _boxFullList = [];
 
 function renderBox(){
@@ -6383,27 +6392,38 @@ function renderBox(){
   document.getElementById('box-count').textContent = `(${list.length}/${state.monsters.length})`;
   if(list.length===0){
     grid.innerHTML = `<div class="empty" style="grid-column:1/-1;"><span class="ico">📦</span>該当するモンスターがいません。<br>ガチャを引いてみよう。</div>`;
+    // ページャも消す
+    const oldPager = document.getElementById('box-pager');
+    if(oldPager) oldPager.remove();
     return;
   }
-  // 既存 observer をクリア
-  if(window._boxObserver){ try{ window._boxObserver.disconnect(); }catch(e){} window._boxObserver = null; }
   _boxFullList = list;
-  _boxRenderedCount = 0;
-  grid.innerHTML = '';
-  _renderBoxMore();
+  // フィルタ変更時はページを0にリセット
+  _boxCurrentPage = 0;
+  _renderBoxPage();
 }
 
-function _renderBoxMore(){
+function _renderBoxPage(){
   const grid = document.getElementById('box-grid');
   if(!grid) return;
   const list = _boxFullList;
-  const start = _boxRenderedCount;
+  const totalPages = Math.max(1, Math.ceil(list.length / BOX_PAGE_SIZE));
+  // ページ番号を範囲内にクランプ
+  if(_boxCurrentPage < 0) _boxCurrentPage = 0;
+  if(_boxCurrentPage >= totalPages) _boxCurrentPage = totalPages - 1;
+  const start = _boxCurrentPage * BOX_PAGE_SIZE;
   const end = Math.min(list.length, start + BOX_PAGE_SIZE);
-  if(start >= list.length) return;
-  // 古い「もっと見る」ボタンを削除
-  const oldMore = document.getElementById('box-more-btn');
-  if(oldMore) oldMore.remove();
-  // カードを追記
+
+  // === 旧Observer解除 + DOM完全クリア (メモリリーク防止) ===
+  if(window._boxObserver){ try{ window._boxObserver.disconnect(); }catch(e){} window._boxObserver = null; }
+  // 旧 src を明示クリア (GPUテクスチャ解放を促す)
+  grid.querySelectorAll('img').forEach(img => { img.removeAttribute('src'); });
+  grid.innerHTML = '';
+  // ページャも一旦消す
+  const oldPager = document.getElementById('box-pager');
+  if(oldPager) oldPager.remove();
+
+  // === 新ページのカードを描画 ===
   const frag = document.createDocumentFragment();
   for(let i = start; i < end; i++){
     const wrap = document.createElement('div');
@@ -6412,37 +6432,46 @@ function _renderBoxMore(){
     frag.appendChild(wrap);
   }
   grid.appendChild(frag);
-  // lazy/async
-  grid.querySelectorAll('.box-cell:not(.observed) img').forEach(img => {
-    img.loading = 'lazy';
-    img.decoding = 'async';
-  });
-  // IntersectionObserver アタッチ
+  grid.querySelectorAll('img').forEach(img => { img.loading='lazy'; img.decoding='async'; });
+  // IntersectionObserver (off-screen クラスのみ)
   if('IntersectionObserver' in window){
-    if(!window._boxObserver){
-      window._boxObserver = new IntersectionObserver((entries)=>{
-        entries.forEach(e=>{
-          e.target.classList.toggle('off-screen', !e.isIntersecting);
-        });
-      }, {root:null, rootMargin:'200px'});
-    }
-    grid.querySelectorAll('.box-cell:not(.observed)').forEach(el => {
-      window._boxObserver.observe(el);
-      el.classList.add('observed');
-    });
+    window._boxObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(e=> e.target.classList.toggle('off-screen', !e.isIntersecting));
+    }, {root:null, rootMargin:'100px'});
+    grid.querySelectorAll('.box-cell').forEach(el => window._boxObserver.observe(el));
   }
-  _boxRenderedCount = end;
-  // 残ありなら「もっと見る」ボタンを追加
-  if(end < list.length){
-    const btn = document.createElement('button');
-    btn.id = 'box-more-btn';
-    btn.style.cssText = 'grid-column:1/-1;margin:14px auto;padding:14px 28px;border-radius:12px;font-weight:900;font-size:13px;letter-spacing:2px;border:none;cursor:pointer;background:linear-gradient(135deg,#7b2ff7,#00d4ff);color:#fff;box-shadow:0 4px 12px rgba(123,47,247,0.5);';
-    const remain = list.length - end;
-    btn.textContent = `⬇ もっと見る (残り ${remain} 体)`;
-    btn.onclick = () => _renderBoxMore();
-    grid.appendChild(btn);
-  }
+
+  // === ページャUIを追加 ===
+  const pager = document.createElement('div');
+  pager.id = 'box-pager';
+  pager.style.cssText = 'grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:6px;margin:14px 0 4px;flex-wrap:wrap;';
+  pager.innerHTML = `
+    <button onclick="boxGotoPage(0)" ${_boxCurrentPage<=0?'disabled':''} style="padding:8px 10px;border-radius:8px;border:none;cursor:pointer;background:${_boxCurrentPage<=0?'#333':'linear-gradient(135deg,#7b2ff7,#00d4ff)'};color:#fff;font-weight:900;font-size:11px;opacity:${_boxCurrentPage<=0?0.4:1};">⏮ 最初</button>
+    <button onclick="boxGotoPage(${_boxCurrentPage-1})" ${_boxCurrentPage<=0?'disabled':''} style="padding:8px 12px;border-radius:8px;border:none;cursor:pointer;background:${_boxCurrentPage<=0?'#333':'linear-gradient(135deg,#7b2ff7,#00d4ff)'};color:#fff;font-weight:900;font-size:11px;opacity:${_boxCurrentPage<=0?0.4:1};">◀ 前</button>
+    <div style="background:#0a0a14;border:1px solid #444;padding:6px 14px;border-radius:8px;font-size:12px;color:#fff;font-weight:900;letter-spacing:1px;">
+      <input type="number" id="box-page-input" min="1" max="${totalPages}" value="${_boxCurrentPage+1}" onchange="boxGotoPage(this.value-1)" style="width:48px;background:transparent;border:none;color:#ffd700;font-weight:900;text-align:right;font-size:13px;"> / ${totalPages}
+    </div>
+    <button onclick="boxGotoPage(${_boxCurrentPage+1})" ${_boxCurrentPage>=totalPages-1?'disabled':''} style="padding:8px 12px;border-radius:8px;border:none;cursor:pointer;background:${_boxCurrentPage>=totalPages-1?'#333':'linear-gradient(135deg,#ff6b35,#ffd700)'};color:#000;font-weight:900;font-size:11px;opacity:${_boxCurrentPage>=totalPages-1?0.4:1};">次 ▶</button>
+    <button onclick="boxGotoPage(${totalPages-1})" ${_boxCurrentPage>=totalPages-1?'disabled':''} style="padding:8px 10px;border-radius:8px;border:none;cursor:pointer;background:${_boxCurrentPage>=totalPages-1?'#333':'linear-gradient(135deg,#ff6b35,#ffd700)'};color:#000;font-weight:900;font-size:11px;opacity:${_boxCurrentPage>=totalPages-1?0.4:1};">最後 ⏭</button>
+    <div style="grid-column:1/-1;width:100%;text-align:center;font-size:9px;opacity:0.6;margin-top:4px;">${start+1}〜${end} 表示 / 全 ${list.length} 体 (1ページ${BOX_PAGE_SIZE}体)</div>
+  `;
+  grid.appendChild(pager);
 }
+
+// ページ移動 (DOMリフレッシュでメモリ解放)
+function boxGotoPage(p){
+  p = parseInt(p, 10);
+  if(isNaN(p)) return;
+  const totalPages = Math.max(1, Math.ceil(_boxFullList.length / BOX_PAGE_SIZE));
+  if(p < 0) p = 0;
+  if(p >= totalPages) p = totalPages - 1;
+  _boxCurrentPage = p;
+  _renderBoxPage();
+  // スクロールトップへ
+  try{ window.scrollTo({top: 0, behavior: 'smooth'}); }catch(e){}
+}
+// 互換: 旧 _renderBoxMore 名でも動くように
+function _renderBoxMore(){ _renderBoxPage(); }
 function filterBox(f){
   boxFilter = f;
   document.querySelectorAll('#box-filters button').forEach(b=>b.classList.remove('active'));
