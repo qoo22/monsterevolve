@@ -2387,8 +2387,8 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 .boss-speech{
   position:absolute;
   left:12px;right:12px;
-  /* 敵actives(top:85+~120=205)の直下、画面上部に固定 */
-  top:calc(215px + var(--sat));
+  /* V57: 敵actives(top:20+~120=140)の直下、画面上部に固定 */
+  top:calc(150px + var(--sat));
   background:linear-gradient(180deg,rgba(8,4,20,0.97),rgba(2,1,8,0.98));
   border:3px solid #fff;
   border-radius:8px;
@@ -2469,10 +2469,22 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
              inset 0 0 8px rgba(0,212,255,0.08);
 }
 .boss-speech.tier-MYTHIC .boss-speech-name{color:#00d4ff;}
+/* V57: 戦闘ログ用 (名前ラベル無し、コンパクト) */
+.boss-speech.combat-log{
+  padding:10px 16px 12px;
+  min-height:42px;
+}
+.boss-speech.combat-log .boss-speech-text{
+  font-size:14px;font-weight:700;color:#fff;
+  text-align:left;line-height:1.4;
+  font-style:normal;
+}
+.boss-speech.combat-log.tier-GOD .boss-speech-text{color:#ffe0ff;}
+.boss-speech.combat-log.tier-MYTHIC .boss-speech-text{color:#d0f0ff;}
 /* モバイル調整 — 敵rowの直下に出す (敵rowはmobileでtop:70+sat) */
 @media (max-width:380px){
   .boss-speech{
-    top:calc(195px + var(--sat));
+    top:calc(130px + var(--sat));
     font-size:12px;padding:10px 12px 12px;
     min-height:50px;max-height:96px;
   }
@@ -2531,6 +2543,8 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 .team-roster.top{
   position:absolute;
   top:calc(8px + var(--sat));
+  /* V57: 敵パーティリストは戦闘中非表示 (ユーザー要望) */
+  display:none !important;
 }
 .team-roster.bottom{
   position:static;  /* inside bottom panel, flow normally */
@@ -2709,7 +2723,8 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
   gap:6px;z-index:3;pointer-events:none;
 }
 .active-row.enemies{
-  top:calc(85px + var(--sat));
+  /* V57: 敵rosterを撤去したのでactivesを上に詰める */
+  top:calc(20px + var(--sat));
 }
 .active-row.players{
   bottom:calc(175px + var(--sab));  /* above bottom panel (roster ~70 + larger controls ~80) */
@@ -9995,12 +10010,21 @@ function executeTurnQueue(queue, i){
       setTimeout(() => tEl.classList.remove('hurt'), 350);
       spawnDamagePopup(tEl, result.dmg, result.crit);
     }
+    // V57: クリティカル時もダイアログに表示
+    if(result.crit){
+      showLog(`💥 クリティカル！ ${attacker.name} の一撃が ${target.name} に ${result.dmg} ダメージ！`);
+    }
+    // 撃破通知
+    if(!target.alive){
+      showLog(`☠ ${target.name} を倒した！`);
+    }
   } else {
     const tSlot = oppActives.indexOf(targetIdx);
     const tEl = document.getElementById(`af-${isPlayer?'e':'p'}-${tSlot}`);
     if(tEl) spawnDamagePopup(tEl, 'MISS', false, true);
+    showLog(`💨 ${attacker.name} の攻撃は外れた！`);
   }
-  if(result.msg) showLog(`${attacker.name}: ${result.msg}`);
+  if(result.msg) showLog(`✨ ${attacker.name} の ${result.msg}`);
   if(attacker._heal){
     const h = Math.round(result.dmg * attacker._heal);
     attacker.hp = Math.min(attacker.maxHp, attacker.hp + h);
@@ -11065,13 +11089,38 @@ function showDamage(side, val, kind){
   setTimeout(()=>pop.remove(),1000);
 }
 
+// V57: 戦闘ログを統一ダイアログボックスに表示 (中央フロート廃止)
+// クリティカル/スキル発動/必殺/撃破等を全部DQダイアログ風に表示
 function showLog(text){
+  if(!text) return;
   const ov = document.getElementById('battle-overlay');
-  const log = document.createElement('div');
-  log.className = 'battle-log';
-  log.textContent = text;
-  ov.appendChild(log);
-  setTimeout(()=>log.remove(),1200);
+  if(!ov) return;
+  // 既存のboss-speech (ナラティブ/セリフ) があれば横取りせず追記スタイル
+  // 連続イベント時は最後のものを置き換える
+  const old = ov.querySelector('.boss-speech');
+  if(old) old.remove();
+  // メッセージ内容で色分け
+  const isCrit   = /クリティカル|💥|致命|critical/i.test(text);
+  const isUlt    = /必殺|→|⚡.*行動|ultimate/i.test(text);
+  const isSkill  = /✨|スキル/.test(text);
+  const isHeal   = /回復|HEAL|\+\d+/.test(text);
+  const isDeath  = /撃破|倒/.test(text);
+  let tier = '';
+  if(isCrit || isDeath) tier = 'GOD';       // マゼンタ枠
+  else if(isUlt)        tier = 'MYTHIC';    // シアン枠
+  // ボックス作成
+  const box = document.createElement('div');
+  box.className = 'boss-speech narrative combat-log' + (tier?' tier-'+tier:'');
+  // 戦闘ログは名前ラベル不要、短時間表示
+  box.innerHTML = `
+    <div class="boss-speech-text">${text}</div>
+    <div class="boss-speech-prompt">▼</div>
+  `;
+  // 短時間表示用にアニメーションを上書き (1.4s in + out)
+  box.style.animation = 'bossSpeechIn 0.22s ease-out forwards, bossSpeechOut 0.3s ease-in 1.4s forwards';
+  ov.appendChild(box);
+  // 1.8秒後にクリーン
+  setTimeout(()=>{ if(box.parentNode) box.remove(); }, 1800);
 }
 
 // Map skill effects to AI-generated cut-in images
