@@ -9271,7 +9271,7 @@ function _startLimitedBattleWithTeam(ldId, si, selectedUids){
   if(!ld) return;
   stopBGM();
   const stage = ld.stages[si];
-  const pTeam = buildPlayerTeam(5, selectedUids);
+  const pTeam = buildPlayerTeam(6, selectedUids);
   if(pTeam.length === 0){ toast('モンスターがいません','error'); return; }
   const eTeam = buildEnemyTeam(stage, !!stage.boss, -1);
   const eActives = stage.boss ? [0] : Array.from({length: Math.min(3, eTeam.length)}, (_,i)=>i);
@@ -9413,13 +9413,13 @@ function renderTeamPicker(){
   const extras = allPool.filter(m => selectedSet.has(m.uid) && !displaySet.has(m.uid));
   const pool = [...pagePool, ...extras];
   const c = document.getElementById('modal-content');
-  const slotImgs = [0,1,2,3,4].map(slot=>{
+  // V65: 5枠 → 6枠 (3体出陣 + 3体控え)
+  const slotImgs = [0,1,2,3,4,5].map(slot=>{
     const uid = _teamPickerSelection[slot];
     const m = uid ? state.monsters.find(x=>x.uid===uid) : null;
     const role = slot<3 ? '出陣' : '控え';
     const roleColor = slot<3 ? '#ffd700' : '#888';
     if(!m) return `<div style="aspect-ratio:3/4;border:2px dashed #fff3;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff5;">枠${slot+1}<br>(${role})</div>`;
-    // V40: ピッカー上部5枠は .picker-slot クラスでオーラ抑制
     return `<div class="picker-slot" style="position:relative;cursor:pointer;" onclick="_pickerRemove(${slot})">
       ${cardHtml(m,'mini',{tiny:true}).replace(/onclick="[^"]+"/,'')}
       <div style="position:absolute;top:0;left:0;right:0;background:${roleColor};color:#000;font-size:8px;text-align:center;padding:1px;font-weight:900;border-radius:8px 8px 0 0;">${slot+1} ${role}</div>
@@ -9437,10 +9437,10 @@ function renderTeamPicker(){
   c.innerHTML = `
     <button class="close-btn" onclick="closeModal()">✕</button>
     <div style="font-size:15px;font-weight:900;text-align:center;margin-bottom:6px;letter-spacing:2px;">⚔ 出撃チーム編成</div>
-    <div style="font-size:10px;opacity:0.7;text-align:center;margin-bottom:10px;">最初の3体が出陣、残り2体は控え。最大5体</div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:12px;">${slotImgs}</div>
+    <div style="font-size:10px;opacity:0.7;text-align:center;margin-bottom:10px;">最初の3体が出陣、残り3体は控え。最大6体</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:12px;">${slotImgs}</div>
     <div style="display:flex;gap:6px;margin-bottom:10px;">
-      <button onclick="_pickerAuto()" style="flex:1;background:linear-gradient(135deg,#ffd700,#ff6b35);color:#000;padding:8px;border-radius:8px;font-weight:900;font-size:11px;border:none;cursor:pointer;">⭐ 能力値TOP5</button>
+      <button onclick="_pickerAuto()" style="flex:1;background:linear-gradient(135deg,#ffd700,#ff6b35);color:#000;padding:8px;border-radius:8px;font-weight:900;font-size:11px;border:none;cursor:pointer;">⭐ 能力値TOP6</button>
       <button onclick="_pickerClear()" style="background:#444;color:#fff;padding:8px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;">クリア</button>
     </div>
     <div class="section-title">手持ち <span style="color:#fff;font-size:11px;font-weight:700;margin-left:6px;">${start+1}〜${end}/全${allPool.length}体</span></div>
@@ -9456,7 +9456,7 @@ function renderTeamPicker(){
     </div>` : ''}
     <div class="bulk-picker-grid">${gridHtml}</div>
     <div class="bulk-picker-info">
-      <div style="font-size:11px;text-align:center;margin-bottom:6px;">選択中: <b style="color:#ffd700;">${_teamPickerSelection.length}/5</b></div>
+      <div style="font-size:11px;text-align:center;margin-bottom:6px;">選択中: <b style="color:#ffd700;">${_teamPickerSelection.length}/6</b></div>
       <button onclick="_pickerConfirm()" style="width:100%;padding:12px;border-radius:8px;font-weight:900;font-size:13px;background:linear-gradient(135deg,#ff6b35,#f7931e);color:#fff;border:none;cursor:pointer;letter-spacing:2px;">⚔ バトル開始</button>
     </div>
   `;
@@ -9466,7 +9466,7 @@ function _pickerToggle(uid){
   const idx = _teamPickerSelection.indexOf(uid);
   if(idx >= 0){ _teamPickerSelection.splice(idx, 1); SFX.click(); }
   else {
-    if(_teamPickerSelection.length >= 5){ toast('5体まで','error'); return; }
+    if(_teamPickerSelection.length >= 6){ toast('6体まで','error'); return; }
     _teamPickerSelection.push(uid); SFX.coinGet();
   }
   renderTeamPicker();
@@ -9479,7 +9479,7 @@ function _pickerRemove(slot){
 }
 function _pickerAuto(){
   const pool = _sortByStatTotal(state.monsters.filter(m=>!m.listed));
-  _teamPickerSelection = pool.slice(0,5).map(m=>m.uid);
+  _teamPickerSelection = pool.slice(0,6).map(m=>m.uid);  // V65: 5→6
   SFX.gemGet();
   renderTeamPicker();
 }
@@ -9633,7 +9633,7 @@ function startBattle(di,si){
 function _startBattleWithTeam(di, si, selectedUids){
   const d = DUNGEONS[di];
   const stage = d.stages[si];
-  const pTeam = buildPlayerTeam(5, selectedUids);
+  const pTeam = buildPlayerTeam(6, selectedUids);
   if(pTeam.length === 0){ toast('モンスターがいません。ガチャを引こう','error'); return; }
   stopBGM();
 
@@ -13361,8 +13361,8 @@ async function init(){
 // ---------- PVP (CODE EXCHANGE) ----------
 function encodeTeamCode(name, team){
   // Compact representation: name|spId,ovr,evo,skill1+skill2|...
-  // Limit to 5 monsters
-  const slots = team.slice(0,5).map(m => {
+  // V65: 5→6 monsters
+  const slots = team.slice(0,6).map(m => {
     const skills = (m.skills||[]).join('+');
     return `${m.spId},${m.ovr},${m.evo||0},${skills}`;
   }).join('|');
@@ -13429,7 +13429,7 @@ function decodeTeamCode(code){
 
 function getMyTeamCode(){
   const myName = state.playerName || 'You';
-  const pool = _sortByStatTotal(state.monsters.filter(m=>!m.listed)).slice(0,5);
+  const pool = _sortByStatTotal(state.monsters.filter(m=>!m.listed)).slice(0,6);  // V65: 5→6
   if(pool.length === 0) return null;
   return encodeTeamCode(myName, pool);
 }
@@ -13544,7 +13544,7 @@ function startPvPBattle(){
   openTeamPicker((selectedUids) => _startPvPBattleWithTeam(decoded, selectedUids));
 }
 function _startPvPBattleWithTeam(decoded, selectedUids){
-  const pTeam = buildPlayerTeam(5, selectedUids);
+  const pTeam = buildPlayerTeam(6, selectedUids);
   if(pTeam.length === 0){ toast('モンスターがいません','error'); return; }
   stopBGM();
   // V64: V62で入れた一律バフを撤去 (進化補正V63で既に互角になったため、
