@@ -13547,23 +13547,17 @@ function _startPvPBattleWithTeam(decoded, selectedUids){
   const pTeam = buildPlayerTeam(5, selectedUids);
   if(pTeam.length === 0){ toast('モンスターがいません','error'); return; }
   stopBGM();
-  // V62: PVP相手も同等のバフを受ける (プレイヤーは skill tree で +18%atk/+25%hp 等を享受しているため、
-  // 敵側にも同等の補正をかけて瞬殺バランス問題を解消)
-  // プレイヤーの skill tree 平均バフ ≈ atk×1.18, def×1.18, hp×1.25, spd×1.08, crit+8
-  const eTeam = decoded.team.map(m => {
-    const copy = {...m, stats:{...m.stats}};
-    // 敵側にもskill tree相当バフを適用
-    copy.stats.atk  = Math.round(copy.stats.atk  * 1.18);
-    copy.stats.def  = Math.round(copy.stats.def  * 1.18);
-    copy.stats.hp   = Math.round(copy.stats.hp   * 1.25);
-    copy.stats.spd  = Math.round(copy.stats.spd  * 1.08);
-    copy.stats.crit = (copy.stats.crit || 0) + 8;
-    // HP/maxHpも同じ倍率で再設定
-    copy.maxHp = copy.stats.hp;
-    copy.hp = copy.stats.hp;
-    copy.alive = true;
-    return copy;
-  });
+  // V64: V62で入れた一律バフを撤去 (進化補正V63で既に互角になったため、
+  // 追加バフは不平等の元凶になっていた)。
+  // スキルツリーバフはプレイヤー側が解放した分だけ享受 (実力差として扱う)。
+  const eTeam = decoded.team.map(m => ({
+    ...m,
+    stats: {...m.stats},
+    hp: m.stats.hp,
+    maxHp: m.stats.hp,
+    alive: true,
+    burn: 0,
+  }));
   const pActives = Array.from({length:Math.min(3,pTeam.length)}, (_,i)=>i);
   const eActives = Array.from({length:Math.min(3,eTeam.length)}, (_,i)=>i);
   battleState = {
