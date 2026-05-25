@@ -1315,13 +1315,19 @@ img{-webkit-user-drag:none;}
   filter:drop-shadow(0 0 20px #fff);
 }
 .orb.tier-MYTHIC{
-  /* V59: LRと同じ動きに統一 (orbPulse 0.3s + orbRotate 2s) — 演出色のみMYTHIC固有 */
+  /* V60: LRと完全に同じGPU負荷プロファイルに揃える
+     — サイズ 260→220 (LR一致)
+     — box-shadow 4層500px → 3層320px (LR一致)
+     — drop-shadow 28→20px (LR一致)
+     色のみMYTHIC固有: 白/マゼンタ/シアン */
   background:url(images/img_98d9360aad4b.jpg) center/cover;
   background-size:cover;
   animation:orbPulse 0.3s alternate infinite, orbRotate 2s linear infinite;
-  box-shadow:0 0 150px #fff,0 0 300px #ff00ff,0 0 400px #ffd700,0 0 500px #00d4ff;
-  filter:drop-shadow(0 0 28px #ff00ff);
-  width:260px;height:260px;
+  box-shadow:0 0 120px #fff,
+             0 0 240px #ff00ff,
+             0 0 320px #00d4ff;
+  filter:drop-shadow(0 0 20px #ff00ff);
+  width:220px;height:220px;
 }
 /* ===== V41: 軽量モード時のガチャ演出全体抑制 =====
    body.gacha-fx-light の時、巨大シャドウ・連続アニメ・多重擬似要素を停止 */
@@ -1363,20 +1369,18 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
    - 1 drop-shadow filter
    ::before や追加アニメは無し */
 .orb.tier-GOD{
-  /* V59: LR(LEGENDARY)と同じ動きに統一
-     — animation: orbPulse 0.3s + orbRotate 2s (LR完全一致)
-     — 演出色だけGOD固有 (6色box-shadow + 金drop-shadow)
-     — 重い::before/::afterレイヤーは撤去、シンプル&iOSに優しい */
+  /* V60: LRと完全に同じGPU負荷プロファイルに揃える
+     — サイズ 300→220 (LR一致)
+     — box-shadow 5層520px → 3層320px (LR一致)
+     — drop-shadow 24→20px (LR一致)
+     色のみGOD固有: 白/金/ライム緑 (LRと差別化) */
   background:url(images/god_orb_v46.png) center/contain no-repeat transparent;
   animation:orbPulse 0.3s alternate infinite, orbRotate 2s linear infinite;
-  box-shadow:
-    0 0 120px #fff,
-    0 0 240px #ff00ff,
-    0 0 340px #ffd700,
-    0 0 440px #00d4ff,
-    0 0 520px #4cff7a;
-  filter:drop-shadow(0 0 24px #ffd700);
-  width:300px;height:300px;
+  box-shadow:0 0 120px #fff,
+             0 0 240px #ffd700,
+             0 0 320px #4cff7a;
+  filter:drop-shadow(0 0 20px #ffd700);
+  width:220px;height:220px;
   border:none;
   border-radius:50%;
   position:relative;
@@ -2451,13 +2455,24 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 /* モバイル調整 — 敵rowの直下に出す (敵rowはmobileでtop:70+sat) */
 @media (max-width:380px){
   .boss-speech{
-    /* mobile: 味方row(下160)+~115高さ = 下275 のすぐ上 */
-    bottom:calc(290px + var(--sab));
-    top:auto;
+    /* V61: iPhoneは画面中央に配置 (下寄りすぎる対策) */
+    top:50%;bottom:auto;
+    transform:translateY(-50%);
     font-size:12px;padding:9px 12px 11px;
     min-height:46px;max-height:84px;
   }
   .boss-speech .boss-speech-text{font-size:12px;}
+}
+/* V61: iPhoneのアニメーションも中央centeredに合わせる (translateYだけずらす) */
+@media (max-width:380px){
+  @keyframes bossSpeechIn{
+    0%{opacity:0;transform:translateY(calc(-50% + 20px));}
+    100%{opacity:1;transform:translateY(-50%);}
+  }
+  @keyframes bossSpeechOut{
+    0%{opacity:1;transform:translateY(-50%);}
+    100%{opacity:0;transform:translateY(calc(-50% + 8px));}
+  }
 }
 
 .battle-log{
@@ -4077,6 +4092,8 @@ function _loadSound(key, url){
     .catch(e => { console.warn('sound load fail', key, e); return null; });
   return _audioLoadPromises[key];
 }
+// V61: SFXキーごとに直近のソースを記録 → 同じ音が呼ばれたら前のを止める
+const _activeSfx = {};
 function _playSound(key, opts={}){
   if(!soundEnabled) return;
   const ac = ensureAudio(); if(!ac) return;
@@ -4086,6 +4103,19 @@ function _playSound(key, opts={}){
     if(SFX_FILES[key]) _loadSound(key, SFX_FILES[key]);
     return false;
   }
+  // 同じキーの直近の音を止める (連続攻撃時の重ね残響対策)
+  const prev = _activeSfx[key];
+  if(prev){
+    try{
+      if(prev.gain){
+        // フェードアウトでクリック音回避
+        prev.gain.gain.cancelScheduledValues(ac.currentTime);
+        prev.gain.gain.setValueAtTime(prev.gain.gain.value, ac.currentTime);
+        prev.gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.05);
+      }
+      if(prev.src) prev.src.stop(ac.currentTime + 0.06);
+    }catch(e){}
+  }
   const src = ac.createBufferSource();
   src.buffer = buf;
   src.playbackRate.value = opts.rate || 1.0;
@@ -4093,7 +4123,29 @@ function _playSound(key, opts={}){
   g.gain.value = (opts.vol != null ? opts.vol : 0.7);
   src.connect(g); g.connect(ac.destination);
   src.start(0);
+  _activeSfx[key] = {src, gain:g, startedAt:ac.currentTime};
+  // 自然終了で参照をクリア
+  src.onended = () => {
+    if(_activeSfx[key] && _activeSfx[key].src === src) _activeSfx[key] = null;
+  };
   return true;
+}
+// V61: 戦闘終了時に全SFX強制停止
+function _stopAllSfx(){
+  const ac = ensureAudio(); if(!ac) return;
+  Object.keys(_activeSfx).forEach(key => {
+    const e = _activeSfx[key];
+    if(!e) return;
+    try{
+      if(e.gain){
+        e.gain.gain.cancelScheduledValues(ac.currentTime);
+        e.gain.gain.setValueAtTime(e.gain.gain.value, ac.currentTime);
+        e.gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.05);
+      }
+      if(e.src) e.src.stop(ac.currentTime + 0.06);
+    }catch(err){}
+    _activeSfx[key] = null;
+  });
 }
 const SFX_FILES = {
   click:        'sound/click_ui.mp3',
@@ -10154,11 +10206,15 @@ function executeUltimateInQueue(attackerIdx, isPlayer, queue, qIdx){
   setTimeout(() => {
     if(!battleState){ return; }
     const aliveTargets = aliveActives(defenderTeam, defActives);
+    // V62: PvPでは必殺AOEを控えめに (3.5→2.5、def 0.3→0.5) — 1ターン全滅対策
+    const isPvP = !!(battleState && battleState.isPvP);
+    const ultAtkMult = isPvP ? 2.5 : 3.5;
+    const ultDefMult = isPvP ? 0.5 : 0.3;
     aliveTargets.forEach((dIdx, j) => {
       setTimeout(() => {
         const def = defenderTeam[dIdx];
         if(!def || !def.alive) return;
-        const baseDmg = Math.max(20, attacker.stats.atk * 3.5 - def.stats.def * 0.3);
+        const baseDmg = Math.max(20, attacker.stats.atk * ultAtkMult - def.stats.def * ultDefMult);
         const dmg = Math.round(baseDmg * rand(0.9, 1.15));
         def.hp -= dmg;
         if(def.hp <= 0){ def.hp = 0; def.alive = false; }
@@ -11241,18 +11297,17 @@ function pickFxByMonster(m){
 
 function showSkillEffect(art, sourceMonster, isEnemy){
   const ov = document.getElementById('battle-overlay');
-  // Pick fx image based on monster
-  const fxKey = pickFxByMonster(sourceMonster);
+  // V61: images/fx_*.png は存在しない → broken-image (?マーク) になっていた
+  // → cutin-fx-img を撤去、flash + streaks + ポートレートのみで演出
   const layer = document.createElement('div');
   layer.className = 'cutin-layer';
   layer.dataset.cleanup = '1';
   layer.innerHTML = `
-    <img class="cutin-fx-img" src="images/${fxKey}.png" alt="">
     <div class="cutin-flash-band show"></div>
     <div class="cutin-streaks show"></div>
     ${sourceMonster && sourceMonster.img ? `
       <div class="cutin-portrait ${isEnemy?'right':''}">
-        <img src="${sourceMonster.img}" alt="">
+        <img src="${sourceMonster.img}" alt="" onerror="this.style.display='none'">
         <div class="skill-name">⚔ ${sourceMonster.name}</div>
       </div>
     ` : ''}
@@ -11269,6 +11324,8 @@ function endBattle(result){
   if(!battleState) return;
   // V58: バトル終了時にBGMを必ず停止 (連続ボス戦の重ね鳴り対策)
   try{ stopBGM(); }catch(e){}
+  // V61: 残っているSFXも全部停止 (攻撃音の残響対策)
+  try{ _stopAllSfx(); }catch(e){}
   // ダイアログも全部除去
   const ov = document.getElementById('battle-overlay');
   if(ov){
@@ -13328,13 +13385,12 @@ function decodeTeamCode(code){
       const o = parseInt(ovr) || sp.base;
       const ev = parseInt(evo) || 0;
       const sks = skills ? skills.split('+').filter(x=>x) : [];
-      // V52: PVP瞬殺バグ修正 — species定義からgod/mythic/legendaryを正しく復元し、
-      //      genStats に渡してmultiplier(GOD=1.55, MYTHIC=1.32等)を確実に適用。
-      //      さらに _buildMonster と同じ竜系GOD +12% ボーナスを再現。
+      // V62: PVP瞬殺バグ — 進化補正が線形でなく乗算複利だったので真因解消
       const isGod = !!sp.god;
       const isMythic = !!sp.mythic || o === 136 || isGod;
       const realRarity = isGod ? 'GOD' : rarityFromOvr(o);
-      let baseStats = genStats(o, realRarity, isMythic, isGod);
+      // base ovr (species定義) からスタート
+      let baseStats = genStats(sp.base, realRarity, isMythic, isGod);
       // 竜系GODはATK/DEF/HP +12%, SPD +10%, CRT +5 (_buildMonsterと同等)
       if(isGod && _isDragonSpecies(sp)){
         baseStats.atk  = Math.round(baseStats.atk  * 1.12);
@@ -13343,11 +13399,18 @@ function decodeTeamCode(code){
         baseStats.spd  = Math.round(baseStats.spd  * 1.10);
         baseStats.crit = Math.round(baseStats.crit + 5);
       }
-      // Apply evolution bonuses
+      // V63: 進化補正を _doExecuteEvolve と完全に同じ乗算複利で復元
+      //  各レベル毎: atk×(1+0.12+lvl×0.015+rb), def×(1+0.10+lvl×0.012+rb×0.8) ...
       if(ev > 0){
-        baseStats.atk += ev * 8;
-        baseStats.def += ev * 7;
-        baseStats.hp += ev * 60;
+        const RARITY_BOOST = { N:0, R:0.02, SR:0.04, SSR:0.06, UR:0.09, LR:0.13, GOD:0.18 };
+        const rb = RARITY_BOOST[realRarity] || 0;
+        for(let lvl=1; lvl<=ev; lvl++){
+          baseStats.atk  = Math.round(baseStats.atk  * (1 + 0.12 + lvl*0.015 + rb));
+          baseStats.def  = Math.round(baseStats.def  * (1 + 0.10 + lvl*0.012 + rb*0.8));
+          baseStats.hp   = Math.round(baseStats.hp   * (1 + 0.15 + lvl*0.018 + rb*1.2));
+          baseStats.spd  = Math.round(baseStats.spd  * (1 + 0.06 + lvl*0.007 + rb*0.5));
+          baseStats.crit = Math.round(baseStats.crit + 2 + lvl*0.5 + rb*10);
+        }
       }
       return {
         spId: sp.id, name: sp.name, art: sp.art, img: sp.img || null,
@@ -13484,7 +13547,23 @@ function _startPvPBattleWithTeam(decoded, selectedUids){
   const pTeam = buildPlayerTeam(5, selectedUids);
   if(pTeam.length === 0){ toast('モンスターがいません','error'); return; }
   stopBGM();
-  const eTeam = decoded.team.map(m => ({...m}));
+  // V62: PVP相手も同等のバフを受ける (プレイヤーは skill tree で +18%atk/+25%hp 等を享受しているため、
+  // 敵側にも同等の補正をかけて瞬殺バランス問題を解消)
+  // プレイヤーの skill tree 平均バフ ≈ atk×1.18, def×1.18, hp×1.25, spd×1.08, crit+8
+  const eTeam = decoded.team.map(m => {
+    const copy = {...m, stats:{...m.stats}};
+    // 敵側にもskill tree相当バフを適用
+    copy.stats.atk  = Math.round(copy.stats.atk  * 1.18);
+    copy.stats.def  = Math.round(copy.stats.def  * 1.18);
+    copy.stats.hp   = Math.round(copy.stats.hp   * 1.25);
+    copy.stats.spd  = Math.round(copy.stats.spd  * 1.08);
+    copy.stats.crit = (copy.stats.crit || 0) + 8;
+    // HP/maxHpも同じ倍率で再設定
+    copy.maxHp = copy.stats.hp;
+    copy.hp = copy.stats.hp;
+    copy.alive = true;
+    return copy;
+  });
   const pActives = Array.from({length:Math.min(3,pTeam.length)}, (_,i)=>i);
   const eActives = Array.from({length:Math.min(3,eTeam.length)}, (_,i)=>i);
   battleState = {
