@@ -1315,9 +1315,10 @@ img{-webkit-user-drag:none;}
   filter:drop-shadow(0 0 20px #fff);
 }
 .orb.tier-MYTHIC{
+  /* V59: LRと同じ動きに統一 (orbPulse 0.3s + orbRotate 2s) — 演出色のみMYTHIC固有 */
   background:url(images/img_98d9360aad4b.jpg) center/cover;
   background-size:cover;
-  animation:orbPulse 0.25s alternate infinite,orbRotate 1.5s linear infinite;
+  animation:orbPulse 0.3s alternate infinite, orbRotate 2s linear infinite;
   box-shadow:0 0 150px #fff,0 0 300px #ff00ff,0 0 400px #ffd700,0 0 500px #00d4ff;
   filter:drop-shadow(0 0 28px #ff00ff);
   width:260px;height:260px;
@@ -1333,8 +1334,8 @@ body.gacha-fx-light .orb.tier-MYTHIC{
   filter:drop-shadow(0 0 20px rgba(255,215,0,0.7)) !important;
 }
 body.gacha-fx-light .orb.tier-GOD{
-  /* V47: 渦巻き回転は禁止 — 静かなパルスのみ */
-  animation:orbPulse 0.9s ease-in-out alternate infinite !important;
+  /* V59: 軽量モードでもLRと同じ動き (回転速度のみ少し遅く) */
+  animation:orbPulse 0.4s alternate infinite, orbRotate 3s linear infinite !important;
 }
 body.gacha-fx-light .orb.tier-MYTHIC{
   animation:orbRotate 2s linear infinite !important;
@@ -1362,62 +1363,26 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
    - 1 drop-shadow filter
    ::before や追加アニメは無し */
 .orb.tier-GOD{
-  /* V51: iOS Safari メモリ激減 — box-shadow 5層 (1500x1500 × 5枚) を
-     単一の事前生成halo PNG (::after で768x768 1枚) に置換。
-     見た目はほぼ同等、GPU合成レイヤーが 5+1+1 → 2 に激減。
-     drop-shadow ぼかしも 32px → 16px に縮小 (差は微妙、メモリ半減)。 */
+  /* V59: LR(LEGENDARY)と同じ動きに統一
+     — animation: orbPulse 0.3s + orbRotate 2s (LR完全一致)
+     — 演出色だけGOD固有 (6色box-shadow + 金drop-shadow)
+     — 重い::before/::afterレイヤーは撤去、シンプル&iOSに優しい */
   background:url(images/god_orb_v46.png) center/contain no-repeat transparent;
-  animation:orbPulse 0.6s ease-in-out alternate infinite;
-  box-shadow:none;        /* V51: 巨大シャドウ廃止 — ::afterで代替 */
-  filter:drop-shadow(0 0 16px #ffd700);  /* V51: 32→16px */
+  animation:orbPulse 0.3s alternate infinite, orbRotate 2s linear infinite;
+  box-shadow:
+    0 0 120px #fff,
+    0 0 240px #ff00ff,
+    0 0 340px #ffd700,
+    0 0 440px #00d4ff,
+    0 0 520px #4cff7a;
+  filter:drop-shadow(0 0 24px #ffd700);
   width:300px;height:300px;
   border:none;
   border-radius:50%;
   position:relative;
-  overflow:visible;
-  will-change:transform;  /* 明示してiOSが事前に最適化レイヤー作る */
-  /* iOSでは余計な3Dコンテキストを作らないようflat指定 */
+  will-change:transform;
   transform-style:flat;
   -webkit-transform-style:flat;
-}
-/* V51: 事前生成ハロー画像で 5色グロー を肩代わり (box-shadow 5層の代替) */
-.orb.tier-GOD::after{
-  content:"";position:absolute;
-  /* halo PNG は元シャドウの直径1500pxを256%スケールで表現 */
-  left:50%;top:50%;
-  width:520%;height:520%;        /* 300px × 5.2 ≒ 1560px reach */
-  transform:translate(-50%,-50%);
-  background:url(images/god_halo_v51.png) center/contain no-repeat;
-  pointer-events:none;
-  z-index:-1;
-  /* mix-blend-mode は重いので使わない (画像にα合成済み) */
-  opacity:0.9;
-}
-/* V47/V51: 斜めキラレイヤー — 軽量化のためfilter:blur削除、mix-blend-mode維持 */
-.orb.tier-GOD::before{
-  content:"";position:absolute;inset:-4px;
-  border-radius:50%;pointer-events:none;
-  background:linear-gradient(110deg,
-    rgba(255,255,255,0)   0%,
-    rgba(255,255,255,0)   28%,
-    rgba(255,255,255,0.55) 40%,
-    rgba(255,215,0,0.45)  46%,
-    rgba(255,255,255,0.65) 52%,
-    rgba(255,255,255,0)   62%,
-    rgba(255,255,255,0)   100%);
-  background-size:240% 240%;
-  mix-blend-mode:screen;
-  /* V51: filter:blur削除 (saturateは残す — blur削除でGPUパス1減) */
-  filter:saturate(1.3);
-  animation:godOrbDiagonal 3.6s ease-in-out infinite;
-  -webkit-mask:radial-gradient(circle at center, #000 60%, transparent 78%);
-          mask:radial-gradient(circle at center, #000 60%, transparent 78%);
-  opacity:0.9;
-}
-@keyframes godOrbDiagonal{
-  0%   {background-position:-30% 130%;}
-  50%  {background-position:130% -30%;}
-  100% {background-position:-30% 130%;}
 }
 .beam.tier-GOD{
   opacity:0.95;animation-duration:1.5s;
@@ -2381,25 +2346,26 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 .dmg-popup.miss{color:#aaa;font-size:24px;}
 @keyframes dmgPop{0%{transform:translateY(0) scale(0.5);opacity:0;}30%{transform:translateY(-30px) scale(1.3);opacity:1;}100%{transform:translateY(-80px) scale(1);opacity:0;}}
 
-/* V54+V55: ボスのDQ/UNDERTALE風ダイアログボックス
-   V55: 出撃モンスターと被るのを修正 — 敵row(85+~120)と味方row(下175+~120)の
-   中央エリアに配置。中央上寄りなので味方にも敵にも被らない */
+/* V58: ボスのDQ/UNDERTALE風ダイアログボックス
+   V58: 敵portrait(160pxボス)とPC版で被るので、プレイヤーactives直上にbottom-anchor。
+   常に味方rowの真上に出る → どんな画面サイズでもボス画像と被らない */
 .boss-speech{
   position:absolute;
   left:12px;right:12px;
-  /* V57: 敵actives(top:20+~120=140)の直下、画面上部に固定 */
-  top:calc(150px + var(--sat));
+  /* プレイヤーactives row top: bottom:175+~140高さ = bottom:315 → そのすぐ上に */
+  bottom:calc(330px + var(--sab));
+  top:auto;
   background:linear-gradient(180deg,rgba(8,4,20,0.97),rgba(2,1,8,0.98));
   border:3px solid #fff;
   border-radius:8px;
-  padding:12px 16px 14px;
-  min-height:54px;max-height:108px;
-  box-shadow:0 6px 22px rgba(0,0,0,0.9),
+  padding:11px 16px 13px;
+  min-height:50px;max-height:96px;
+  box-shadow:0 -4px 22px rgba(0,0,0,0.9),
              0 0 0 1px #000,
              inset 0 0 8px rgba(255,255,255,0.05);
   color:#fff;
   font-family:'Courier New','MS Gothic',monospace;
-  font-size:13px;line-height:1.5;
+  font-size:13px;line-height:1.45;
   letter-spacing:0.02em;
   text-shadow:1px 1px 0 #000;
   z-index:15;pointer-events:none;
@@ -2441,12 +2407,13 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
   font-weight:500;
 }
 @keyframes bossSpeechIn{
-  0%{opacity:0;transform:translateY(-20px);}
+  /* V58: bottom-anchorに変更 → 下から上にスライド */
+  0%{opacity:0;transform:translateY(20px);}
   100%{opacity:1;transform:translateY(0);}
 }
 @keyframes bossSpeechOut{
   0%{opacity:1;}
-  100%{opacity:0;transform:translateY(-8px);}
+  100%{opacity:0;transform:translateY(8px);}
 }
 @keyframes bossSpeechBlink{
   0%,49%{opacity:1;}
@@ -2455,7 +2422,7 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 /* レア度別の枠色 */
 .boss-speech.tier-GOD{
   border-color:#ff6bff;
-  box-shadow:0 6px 22px rgba(0,0,0,0.9),
+  box-shadow:0 -4px 22px rgba(0,0,0,0.9),
              0 0 0 1px #000,
              0 0 18px rgba(255,107,255,0.45),
              inset 0 0 8px rgba(255,107,255,0.08);
@@ -2463,7 +2430,7 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 .boss-speech.tier-GOD .boss-speech-name{color:#ff6bff;}
 .boss-speech.tier-MYTHIC{
   border-color:#00d4ff;
-  box-shadow:0 6px 22px rgba(0,0,0,0.9),
+  box-shadow:0 -4px 22px rgba(0,0,0,0.9),
              0 0 0 1px #000,
              0 0 16px rgba(0,212,255,0.4),
              inset 0 0 8px rgba(0,212,255,0.08);
@@ -2484,9 +2451,11 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 /* モバイル調整 — 敵rowの直下に出す (敵rowはmobileでtop:70+sat) */
 @media (max-width:380px){
   .boss-speech{
-    top:calc(130px + var(--sat));
-    font-size:12px;padding:10px 12px 12px;
-    min-height:50px;max-height:96px;
+    /* mobile: 味方row(下160)+~115高さ = 下275 のすぐ上 */
+    bottom:calc(290px + var(--sab));
+    top:auto;
+    font-size:12px;padding:9px 12px 11px;
+    min-height:46px;max-height:84px;
   }
   .boss-speech .boss-speech-text{font-size:12px;}
 }
@@ -3943,7 +3912,7 @@ function resolveImg(path){
 }
 
 
-const UI_IMG = {"splash_bg":"images/splash_v20.jpg","title_logo":"images/title_logo_v20b.jpg","pack_legendary":"images/pack_legendary_hd_v14.jpg","pack_element":"images/pack_element_hd_v14.jpg","pack_evo":"images/pack_evo_hd_v14.jpg","pack_limited":"images/pack_limited_hd_v14.jpg","pack_godpack":"images/pack_godpack_hd_v14.jpg","pack_dragon":"images/pack_dragon_hd_v14.jpg","pack_divine":"images/pack_divine_hd_v14.jpg","pack_shadow":"images/pack_shadow_hd_v14.jpg","home_banner_legendary":"images/banner_legendary_v33.jpg","home_banner_event":"images/banner_event_v33.jpg","home_banner_pvp":"images/banner_pvp_v33.jpg","tile_gacha":"images/tile_gacha_v20.jpg","tile_battle":"images/tile_quest_v20.jpg","tile_evolve":"images/tile_evolve_v20.jpg","tile_market":"images/tile_market_v20.jpg"};
+const UI_IMG = {"splash_bg":"images/splash_v20.jpg","title_logo":"images/title_logo_v20b.jpg","pack_legendary":"images/pack_legendary_v58.jpg","pack_element":"images/pack_element_v58.jpg","pack_evo":"images/pack_evo_v58.jpg","pack_limited":"images/pack_limited_v58.jpg","pack_godpack":"images/pack_godpack_v58.jpg","pack_dragon":"images/pack_dragon_v58.jpg","pack_divine":"images/pack_divine_v58.jpg","pack_shadow":"images/pack_shadow_v58.jpg","home_banner_legendary":"images/banner_legendary_v33.jpg","home_banner_event":"images/banner_event_v33.jpg","home_banner_pvp":"images/banner_pvp_v33.jpg","tile_gacha":"images/tile_gacha_v20.jpg","tile_battle":"images/tile_quest_v20.jpg","tile_evolve":"images/tile_evolve_v20.jpg","tile_market":"images/tile_market_v20.jpg"};
 const ULT_IMG = {"ult_inferno":"images/img_df1234f20561.jpg","ult_tsunami":"images/img_233f743b5005.jpg","ult_nature":"images/img_11a4afa9c925.jpg","ult_void":"images/img_06572bfc88f8.jpg","ult_holy":"images/img_3c6f5b275517.jpg","ult_thunder":"images/img_10b2fdf7b87d.jpg","ult_quantum":"images/img_f149084388ce.jpg","ult_cosmic":"images/img_03ee0b1e6186.jpg"};
 
 /* ============================================================
@@ -3989,6 +3958,107 @@ function noise(dur=0.1, vol=0.2, filterFreq=2000){
 }
 function chord(notes, dur=0.3, type='sine', vol=0.1){
   notes.forEach((n,i)=>setTimeout(()=>tone(n,dur,type,vol),i*20));
+}
+
+// V59: GOD排出専用「脳汁ジャックポット音」
+// SSR確定演出・パチンコ大当たり風の5秒派手電子音ジングル
+// 構成: 低音ドゥン → 上昇riser → ピロピロ8bit → ベル乱舞 → キュイーン → シャキーン → 大ファンファーレ
+function _godJackpotSFX(){
+  if(!soundEnabled) return;
+  const ac = ensureAudio(); if(!ac) return;
+  const t0 = ac.currentTime;
+  // 共通ヘルパ (絶対時刻指定版)
+  const T = (freq, when, dur, type='sine', vol=0.15, glide=null) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = freq;
+    if(glide) o.frequency.exponentialRampToValueAtTime(glide, when + dur);
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(vol, when + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, when + dur);
+    o.connect(g); g.connect(ac.destination);
+    o.start(when); o.stop(when + dur + 0.02);
+  };
+  const N = (when, dur, vol=0.18, filterFreq=4000, hp=false) => {
+    const buf = ac.createBuffer(1, Math.max(1, ac.sampleRate * dur), ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const filt = ac.createBiquadFilter();
+    filt.type = hp ? 'highpass' : 'lowpass';
+    filt.frequency.value = filterFreq;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(vol, when);
+    g.gain.exponentialRampToValueAtTime(0.001, when + dur);
+    src.connect(filt); filt.connect(g); g.connect(ac.destination);
+    src.start(when); src.stop(when + dur);
+  };
+
+  // === 0.00s: 低音「ドゥン...」 ===
+  T(55, t0+0.00, 0.5, 'sine', 0.32);
+  T(82.4, t0+0.00, 0.45, 'sine', 0.22);
+  N(t0+0.00, 0.15, 0.18, 800);
+
+  // === 0.25s: 軽い「ピィン」予兆 ===
+  T(1320, t0+0.25, 0.12, 'sine', 0.10);
+  T(2640, t0+0.25, 0.08, 'sine', 0.07);
+
+  // === 0.40s: 上昇riser (200Hz → 4000Hz over 0.6s) ===
+  T(200, t0+0.40, 0.6, 'sawtooth', 0.13, 4000);
+  T(400, t0+0.40, 0.6, 'square',   0.07, 8000);
+  N(t0+0.40, 0.6, 0.10, 6000, true);  // hi-pass noise sweep
+
+  // === 1.00s: 「ピロリロリロ！」高速8bit上昇アルペジオ ===
+  const arp = [523, 659, 784, 880, 1047, 1175, 1319, 1568, 1760, 2093, 2349, 2637];
+  arp.forEach((f, i) => {
+    T(f, t0+1.00 + i*0.045, 0.08, 'square', 0.12);
+  });
+
+  // === 1.60s: キラキラベル乱舞 (3秒) ===
+  const bells = [2093, 2349, 2637, 2794, 3136, 3520, 3951, 4186, 2093*1.5, 2637*1.2];
+  for(let i=0; i<14; i++){
+    const f = bells[i % bells.length] * (0.9 + Math.random()*0.3);
+    const when = t0 + 1.60 + i*0.13 + Math.random()*0.05;
+    T(f, when, 0.4, 'sine',     0.10);
+    T(f*2, when, 0.3, 'triangle', 0.05);  // overtone
+  }
+
+  // === 2.40s: グリッチ音 (ピロピロ装飾) ===
+  for(let i=0; i<6; i++){
+    const f = 800 + Math.random()*3000;
+    T(f, t0+2.40 + i*0.04, 0.03, 'square', 0.08);
+  }
+
+  // === 2.80s: 「キュイーン」(高音から急降下) ===
+  T(4200, t0+2.80, 0.45, 'sawtooth', 0.18, 800);
+  T(3000, t0+2.80, 0.45, 'square',   0.10, 600);
+  N(t0+2.80, 0.20, 0.08, 4000, true);
+
+  // === 3.25s: 「シャキーン！」クリスタルヒット ===
+  N(t0+3.25, 0.08, 0.30, 8000, true);   // sharp crystal noise
+  T(4400, t0+3.25, 0.5, 'sine',     0.18);
+  T(5800, t0+3.25, 0.4, 'triangle', 0.12);
+  T(2200, t0+3.25, 0.6, 'sine',     0.10);
+
+  // === 3.50s: 大ファンファーレ (虹色和音) ===
+  // C major triad + extensions (C, E, G, B, D, F#)
+  const fanfare = [523, 659, 784, 988, 1175, 1397, 1568, 1760, 2093, 2349, 2637];
+  fanfare.forEach((f, i) => {
+    T(f, t0+3.50 + (i%3)*0.04, 1.2, 'triangle', 0.07);
+    T(f*0.5, t0+3.50 + (i%3)*0.04, 1.2, 'sine', 0.04);
+  });
+  // ドラム的キックで強調
+  T(60, t0+3.50, 0.4, 'sine', 0.30, 30);
+  T(60, t0+3.85, 0.4, 'sine', 0.25, 30);
+  T(60, t0+4.20, 0.5, 'sine', 0.28, 30);
+
+  // === 4.40s: 最後の余韻ベル ===
+  T(2093, t0+4.40, 1.0, 'sine',     0.10);
+  T(2637, t0+4.40, 1.0, 'triangle', 0.07);
+  T(3136, t0+4.40, 1.0, 'sine',     0.06);
+  N(t0+4.40, 0.3, 0.04, 6000, true);
+
+  // === 5.20s: 余韻フェード ===
+  T(1568, t0+5.20, 0.6, 'sine', 0.05);
 }
 
 // ===== V7 HIGH-QUALITY SOUND ENGINE =====
@@ -4069,9 +4139,9 @@ const SFX = {
     }
   },
   cardReveal: (tier)=>{
-    // tier別: GOD/MYTHICはfanfare+sparkle、LRはfanfare、URはbonus、SSRはachievement、それ以下はchimeのみ
+    // tier別: GOD=脳汁ジャックポット、MYTHICはfanfare+sparkle、LRはfanfare、URはbonus、SSRはachievement、それ以下はchimeのみ
     if(tier==='GOD'){
-      _playSound('fanfare',{vol:0.75}); setTimeout(()=>_playSound('sparkle',{vol:0.55}),250);
+      _godJackpotSFX();  // V59: 専用ジャックポット音
     } else if(tier==='MYTHIC'){
       _playSound('fanfare',{vol:0.65}); setTimeout(()=>_playSound('sparkle',{vol:0.45}),300);
     } else if(tier==='LR'){
@@ -9964,41 +10034,59 @@ function executeTurnQueue(queue, i){
   // ULTIMATE — separate cinematic path
   if(action === 'ultimate'){
     attacker.ult = 0;
-    // V53: ボスが必殺撃つ時はセリフ
+    // V53+V58: ボス必殺は先にセリフを見せて、1.2秒後に必殺発動
     if(!isPlayer && battleState.boss){
-      showBossSpeech(attacker, 'ult');
+      const spoke = showBossSpeech(attacker, 'ult');
+      const delay = spoke ? 1200 : 0;
+      setTimeout(() => executeUltimateInQueue(step.idx, isPlayer, queue, i), delay);
+      return;
     }
     executeUltimateInQueue(step.idx, isPlayer, queue, i);
     return;
   }
 
-  // V53: ボス通常攻撃時、たまにセリフ (HP残量で大ピンチセリフへ切替)
+  // V53+V58: ボス通常攻撃 — セリフ/ナラティブ表示後に攻撃モーション+ダメージ
+  let attackDelay = 0;
   if(!isPlayer && battleState.boss && !step.isBossExtra){
     const hpRatio = attacker.hp / Math.max(1, attacker.maxHp);
     const kind = hpRatio <= 0.3 ? 'low' : 'atk';
-    showBossSpeech(attacker, kind);
+    const spoke = showBossSpeech(attacker, kind);
+    if(spoke) attackDelay = 1200;  // ナラティブ/セリフを読む時間
   }
-
-  // Animate attacker
+  // 攻撃モーション
   const slot = actives.indexOf(step.idx);
-  const afEl = document.getElementById(`af-${isPlayer?'p':'e'}-${slot}`);
-  if(afEl){
-    afEl.classList.add(isPlayer ? 'attacking-l' : 'attacking-r');
-    setTimeout(() => afEl.classList.remove(isPlayer?'attacking-l':'attacking-r'), 400);
+  const playAttackAnim = () => {
+    const afEl = document.getElementById(`af-${isPlayer?'p':'e'}-${slot}`);
+    if(afEl){
+      afEl.classList.add(isPlayer ? 'attacking-l' : 'attacking-r');
+      setTimeout(() => afEl.classList.remove(isPlayer?'attacking-l':'attacking-r'), 400);
+    }
+  };
+  if(attackDelay > 0){
+    // ダイアログ表示中は攻撃モーション・ダメージを遅延
+    setTimeout(() => {
+      if(!battleState) return;
+      playAttackAnim();
+      _executeAttackImpact(attacker, target, action, isPlayer, oppActives, targetIdx, queue, i);
+    }, attackDelay);
+    return;
   }
+  playAttackAnim();
+  _executeAttackImpact(attacker, target, action, isPlayer, oppActives, targetIdx, queue, i);
+}
 
+// V58: 攻撃の衝撃処理 (ダメージ計算+ログ+次のキュー進行) — 遅延でも即時でも呼べる共通関数
+function _executeAttackImpact(attacker, target, action, isPlayer, oppActives, targetIdx, queue, i){
+  if(!battleState) return;
   const result = calcDamage(attacker, target, action);
-  // スキルが proc した場合のみカットイン演出を再生
   const skillProc = result.msg && result.msg.indexOf('✨') === 0;
   if(skillProc){
     SFX.skill();
     showSkillEffect(attacker.art, attacker, !isPlayer);
   }
-  // 必殺ゲージ蓄積（スキル proc 時はやや少なめ）
   attacker.ult = Math.min(100, (attacker.ult||0) + (skillProc ? 12 : 18));
   if(target) target.ult = Math.min(100, (target.ult||0) + 5);
 
-  // Apply damage
   if(!result.miss){
     target.hp -= result.dmg;
     if(target.hp <= 0){ target.hp = 0; target.alive = false; }
@@ -10010,11 +10098,9 @@ function executeTurnQueue(queue, i){
       setTimeout(() => tEl.classList.remove('hurt'), 350);
       spawnDamagePopup(tEl, result.dmg, result.crit);
     }
-    // V57: クリティカル時もダイアログに表示
     if(result.crit){
       showLog(`💥 クリティカル！ ${attacker.name} の一撃が ${target.name} に ${result.dmg} ダメージ！`);
     }
-    // 撃破通知
     if(!target.alive){
       showLog(`☠ ${target.name} を倒した！`);
     }
@@ -10031,8 +10117,6 @@ function executeTurnQueue(queue, i){
     delete attacker._heal;
   }
   renderBattle();
-
-  // スキル proc 時は演出が長いので少し待つ
   setTimeout(() => executeTurnQueue(queue, i+1), skillProc ? 500 : 300);
 }
 
@@ -10754,12 +10838,12 @@ function getBossLine(monster, kind, useNarrative){
   return {text: pick(BOSS_QUOTES_GENERIC.default[kind] || ['…']), isNarrative: false};
 }
 function showBossSpeech(monster, kind){
-  // クールダウン制御で連発防止
+  // クールダウン制御で連発防止 — 表示できなかった時は false を返す
   const now = Date.now();
-  if(kind === 'atk' && now < _bossSpeechCooldown) return;
-  if(!battleState || !battleState.boss) return;
+  if(kind === 'atk' && now < _bossSpeechCooldown) return false;
+  if(!battleState || !battleState.boss) return false;
   const ov = document.getElementById('battle-overlay');
-  if(!ov) return;
+  if(!ov) return false;
   // 既存の吹き出しを除去
   const old = ov.querySelector('.boss-speech');
   if(old) old.remove();
@@ -10771,7 +10855,7 @@ function showBossSpeech(monster, kind){
   else useNarrative = Math.random() < 0.6;
 
   const line = getBossLine(monster, kind, useNarrative);
-  if(!line || !line.text) return;
+  if(!line || !line.text) return false;
   const tier = monster.god ? 'GOD' : monster.mythic ? 'MYTHIC' : '';
   const bubble = document.createElement('div');
   bubble.className = 'boss-speech' + (tier?' tier-'+tier:'') + (line.isNarrative?' narrative':'');
@@ -10787,6 +10871,7 @@ function showBossSpeech(monster, kind){
   _bossSpeechCooldown = now + (kind === 'atk' || kind === 'idle' ? 3400 : 4000);
   // 3.6秒後に自然削除 (CSSアニメで3sフェード+0.35s)
   setTimeout(()=>{ if(bubble.parentNode) bubble.remove(); }, 3600);
+  return true;  // V58: 呼び出し側がdelay判定するためtrueを返す
 }
 
 function spawnDamagePopup(targetEl, val, isCrit, isMiss){
@@ -11182,11 +11267,17 @@ function showSkillEffect(art, sourceMonster, isEnemy){
 
 function endBattle(result){
   if(!battleState) return;
+  // V58: バトル終了時にBGMを必ず停止 (連続ボス戦の重ね鳴り対策)
+  try{ stopBGM(); }catch(e){}
+  // ダイアログも全部除去
   const ov = document.getElementById('battle-overlay');
-  // V15: 残存する必殺カットイン / ポートレートを即時除去 (続けるボタンを覆い隠さないため)
-  try{
-    ov.querySelectorAll('.ult-cutin, .ult-portrait').forEach(el => el.remove());
-  }catch(e){}
+  if(ov){
+    try{ ov.querySelectorAll('.boss-speech').forEach(el => el.remove()); }catch(e){}
+    // V15: 残存する必殺カットイン / ポートレートを即時除去 (続けるボタンを覆い隠さないため)
+    try{ ov.querySelectorAll('.ult-cutin, .ult-portrait').forEach(el => el.remove()); }catch(e){}
+  }
+  // ボスセリフのクールダウンもリセット (次戦で即座にセリフが出るように)
+  try{ _bossSpeechCooldown = 0; }catch(e){}
   if(result==='win'){
     SFX.victory();
     const drop = battleState.drop;
