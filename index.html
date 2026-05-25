@@ -1254,6 +1254,10 @@ img{-webkit-user-drag:none;}
 .gacha-stage{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   perspective:1200px;
+  /* V51: GPU合成範囲をステージ内に閉じ込める — orb の巨大ハロー画像が
+     親レイアウト全体を再合成させる事故を防ぐ */
+  contain:layout style paint;
+  overflow:hidden;
 }
 
 /* Background pulse */
@@ -1358,25 +1362,38 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
    - 1 drop-shadow filter
    ::before や追加アニメは無し */
 .orb.tier-GOD{
-  /* V46: 透明余白をギリギリまでトリミング — 球体がオーラ境目まで大きく見える
-     V47: 渦巻き回転を停止 (orbRotateを外す) — 目が回るのを防ぐ
-          代わりに斜めキラレイヤー(::before)を流す */
+  /* V51: iOS Safari メモリ激減 — box-shadow 5層 (1500x1500 × 5枚) を
+     単一の事前生成halo PNG (::after で768x768 1枚) に置換。
+     見た目はほぼ同等、GPU合成レイヤーが 5+1+1 → 2 に激減。
+     drop-shadow ぼかしも 32px → 16px に縮小 (差は微妙、メモリ半減)。 */
   background:url(images/god_orb_v46.png) center/contain no-repeat transparent;
-  animation:orbPulse 0.6s ease-in-out alternate infinite;  /* 回転なし、ゆったり明滅のみ */
-  box-shadow:
-    0 0 150px #fff,
-    0 0 300px #ff00ff,
-    0 0 400px #ffd700,
-    0 0 500px #00d4ff,
-    0 0 600px #4cff7a;
-  filter:drop-shadow(0 0 32px #ffd700);
+  animation:orbPulse 0.6s ease-in-out alternate infinite;
+  box-shadow:none;        /* V51: 巨大シャドウ廃止 — ::afterで代替 */
+  filter:drop-shadow(0 0 16px #ffd700);  /* V51: 32→16px */
   width:300px;height:300px;
   border:none;
   border-radius:50%;
   position:relative;
   overflow:visible;
+  will-change:transform;  /* 明示してiOSが事前に最適化レイヤー作る */
+  /* iOSでは余計な3Dコンテキストを作らないようflat指定 */
+  transform-style:flat;
+  -webkit-transform-style:flat;
 }
-/* V47: 斜めに流れるキラレイヤー (godHoloStripe風) — 渦巻き感の代わり */
+/* V51: 事前生成ハロー画像で 5色グロー を肩代わり (box-shadow 5層の代替) */
+.orb.tier-GOD::after{
+  content:"";position:absolute;
+  /* halo PNG は元シャドウの直径1500pxを256%スケールで表現 */
+  left:50%;top:50%;
+  width:520%;height:520%;        /* 300px × 5.2 ≒ 1560px reach */
+  transform:translate(-50%,-50%);
+  background:url(images/god_halo_v51.png) center/contain no-repeat;
+  pointer-events:none;
+  z-index:-1;
+  /* mix-blend-mode は重いので使わない (画像にα合成済み) */
+  opacity:0.9;
+}
+/* V47/V51: 斜めキラレイヤー — 軽量化のためfilter:blur削除、mix-blend-mode維持 */
 .orb.tier-GOD::before{
   content:"";position:absolute;inset:-4px;
   border-radius:50%;pointer-events:none;
@@ -1390,7 +1407,8 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
     rgba(255,255,255,0)   100%);
   background-size:240% 240%;
   mix-blend-mode:screen;
-  filter:blur(2px) saturate(1.3);
+  /* V51: filter:blur削除 (saturateは残す — blur削除でGPUパス1減) */
+  filter:saturate(1.3);
   animation:godOrbDiagonal 3.6s ease-in-out infinite;
   -webkit-mask:radial-gradient(circle at center, #000 60%, transparent 78%);
           mask:radial-gradient(circle at center, #000 60%, transparent 78%);
@@ -1466,7 +1484,8 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 
 /* Spinning beams */
 .beam{
-  position:absolute;width:300vw;height:300vh;
+  /* V51: 300vw/300vh → 200vw/200vh (画面の2倍で十分。GPU描画範囲を55%カット) */
+  position:absolute;width:200vw;height:200vh;
   background:conic-gradient(from 0deg,transparent 0deg,rgba(255,215,0,0.6) 10deg,transparent 20deg,transparent 60deg,rgba(255,107,255,0.5) 70deg,transparent 80deg,transparent 120deg,rgba(78,205,196,0.5) 130deg,transparent 140deg);
   opacity:0;animation:beamSpin 6s linear infinite;
   pointer-events:none;mix-blend-mode:screen;
@@ -2361,6 +2380,104 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 .dmg-popup.crit{color:#ff1e5a;font-size:42px;text-shadow:0 0 10px #ff1e5a;}
 .dmg-popup.miss{color:#aaa;font-size:24px;}
 @keyframes dmgPop{0%{transform:translateY(0) scale(0.5);opacity:0;}30%{transform:translateY(-30px) scale(1.3);opacity:1;}100%{transform:translateY(-80px) scale(1);opacity:0;}}
+
+/* V54+V55: ボスのDQ/UNDERTALE風ダイアログボックス
+   V55: 出撃モンスターと被るのを修正 — 敵row(85+~120)と味方row(下175+~120)の
+   中央エリアに配置。中央上寄りなので味方にも敵にも被らない */
+.boss-speech{
+  position:absolute;
+  left:12px;right:12px;
+  /* 敵actives(top:85+~120=205)の直下、画面上部に固定 */
+  top:calc(215px + var(--sat));
+  background:linear-gradient(180deg,rgba(8,4,20,0.97),rgba(2,1,8,0.98));
+  border:3px solid #fff;
+  border-radius:8px;
+  padding:12px 16px 14px;
+  min-height:54px;max-height:108px;
+  box-shadow:0 6px 22px rgba(0,0,0,0.9),
+             0 0 0 1px #000,
+             inset 0 0 8px rgba(255,255,255,0.05);
+  color:#fff;
+  font-family:'Courier New','MS Gothic',monospace;
+  font-size:13px;line-height:1.5;
+  letter-spacing:0.02em;
+  text-shadow:1px 1px 0 #000;
+  z-index:15;pointer-events:none;
+  opacity:0;
+  overflow:hidden;
+  animation:bossSpeechIn 0.28s ease-out forwards,
+            bossSpeechOut 0.35s ease-in forwards;
+  animation-delay:0s, 3.0s;
+}
+.boss-speech .boss-speech-name{
+  font-size:11px;font-weight:900;letter-spacing:2px;
+  color:#ffd700;margin-bottom:5px;
+  text-transform:uppercase;
+}
+.boss-speech .boss-speech-text{
+  font-weight:600;
+  font-size:14px;
+  white-space:pre-wrap;
+  word-wrap:break-word;
+}
+.boss-speech .boss-speech-prompt{
+  position:absolute;
+  right:14px;bottom:8px;
+  font-size:14px;color:#ffd700;
+  animation:bossSpeechBlink 0.8s steps(2) infinite;
+}
+/* ナラティブ表示(状態解説) — セリフと違いカッコ無し、淡い色 */
+.boss-speech.narrative{
+  border-color:rgba(255,215,0,0.7);
+  background:linear-gradient(180deg,rgba(4,2,16,0.97),rgba(8,4,20,0.98));
+}
+.boss-speech.narrative .boss-speech-name{
+  color:rgba(255,255,255,0.5);
+  font-size:10px;letter-spacing:1px;
+}
+.boss-speech.narrative .boss-speech-text{
+  color:#e8e8f0;
+  font-style:italic;
+  font-weight:500;
+}
+@keyframes bossSpeechIn{
+  0%{opacity:0;transform:translateY(-20px);}
+  100%{opacity:1;transform:translateY(0);}
+}
+@keyframes bossSpeechOut{
+  0%{opacity:1;}
+  100%{opacity:0;transform:translateY(-8px);}
+}
+@keyframes bossSpeechBlink{
+  0%,49%{opacity:1;}
+  50%,100%{opacity:0;}
+}
+/* レア度別の枠色 */
+.boss-speech.tier-GOD{
+  border-color:#ff6bff;
+  box-shadow:0 6px 22px rgba(0,0,0,0.9),
+             0 0 0 1px #000,
+             0 0 18px rgba(255,107,255,0.45),
+             inset 0 0 8px rgba(255,107,255,0.08);
+}
+.boss-speech.tier-GOD .boss-speech-name{color:#ff6bff;}
+.boss-speech.tier-MYTHIC{
+  border-color:#00d4ff;
+  box-shadow:0 6px 22px rgba(0,0,0,0.9),
+             0 0 0 1px #000,
+             0 0 16px rgba(0,212,255,0.4),
+             inset 0 0 8px rgba(0,212,255,0.08);
+}
+.boss-speech.tier-MYTHIC .boss-speech-name{color:#00d4ff;}
+/* モバイル調整 — 敵rowの直下に出す (敵rowはmobileでtop:70+sat) */
+@media (max-width:380px){
+  .boss-speech{
+    top:calc(195px + var(--sat));
+    font-size:12px;padding:10px 12px 12px;
+    min-height:50px;max-height:96px;
+  }
+  .boss-speech .boss-speech-text{font-size:12px;}
+}
 
 .battle-log{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -4004,6 +4121,25 @@ function toggleSound(){
   if(btn) btn.textContent = soundEnabled?'🔊':'🔇';
   if(soundEnabled){ ensureAudio(); try{ preloadAllSFX(); }catch(e){} SFX.click(); } else { stopBGM(); }
 }
+
+// V51: GOD演出用ハロー画像をアイドル時に先読み (初回ガチャでのジャンク防止)
+(function _preloadGodHalo(){
+  try{
+    const preload = () => {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = 'images/god_halo_v51.png';
+      const img2 = new Image();
+      img2.decoding = 'async';
+      img2.src = 'images/god_orb_v46.png';
+    };
+    if('requestIdleCallback' in window){
+      requestIdleCallback(preload, {timeout:3000});
+    } else {
+      setTimeout(preload, 1500);
+    }
+  }catch(e){}
+})();
 
 // ============ BGM ENGINE (procedural loops) ============
 let bgmNodes = [];
@@ -7232,7 +7368,12 @@ function getTier(m){
   return 'N';
 }
 
+// V51: iOS判定 — iPhoneでは粒子数を半分に。見た目はほぼ同じ密度に見える
+const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 function spawnParticles(stage, count, color){
+  // iOSでは要求数の60% (上限45) — 見た目維持しつつDOM/アニメ負荷を激減
+  if(_isIOS) count = Math.min(45, Math.ceil(count * 0.6));
   const p = document.createElement('div');
   p.className = 'particles';
   for(let i=0;i<count;i++){
@@ -7245,7 +7386,8 @@ function spawnParticles(stage, count, color){
     d.style.animationDuration = (1+Math.random()*0.8)+'s';
     if(color){
       d.style.background = color;
-      d.style.boxShadow = `0 0 8px ${color},0 0 16px ${color}`;
+      // V51: box-shadow 2層 → 1層 (粒子1個あたりGPUパス減)
+      d.style.boxShadow = `0 0 10px ${color}`;
     }
     p.appendChild(d);
   }
@@ -9058,6 +9200,12 @@ function _startBattleWithTeam(di, si, selectedUids){
   if(stage.boss){
     SFX.bossAppear();
     setTimeout(()=>playBossBGM(), 800);
+    // V53: ボス登場時のセリフ (1.2秒後に出す — 登場演出と被らないように)
+    _bossSpeechCooldown = 0; // バトル開始時はクールダウンリセット
+    setTimeout(()=>{
+      const bossUnit = eTeam[0];
+      if(bossUnit) showBossSpeech(bossUnit, 'appear');
+    }, 1200);
   } else {
     playNormalBGM();
   }
@@ -9377,12 +9525,22 @@ function playerAttack(type){
       queue.push({team:'p', idx, action: myAct});
     }
   });
+  // V53: ボスは1ターンに複数回行動 (深度でスケール)
+  //   D1〜D16: 2回 / D17〜D24: 3回 / D25+: 4回 / 限定ステ: +1
+  const depthBoss = (battleState.di != null && battleState.di >= 0) ? battleState.di : 0;
+  let bossActs = 2;
+  if(depthBoss >= 25) bossActs = 4;
+  else if(depthBoss >= 17) bossActs = 3;
+  if(battleState.isLimited) bossActs += 1;
+
   eActives.forEach(idx => {
     if(eTeam[idx] && eTeam[idx].alive){
-      // 敵も必殺ゲージMAXなら必殺、それ以外は通常攻撃
-      // スキルは calcDamage 内で proc 判定するので、ここで 'skill' 種別は不要
-      const eAct = (eTeam[idx].ult||0) >= 100 ? 'ultimate' : 'normal';
-      queue.push({team:'e', idx, action: eAct});
+      const repeats = boss ? bossActs : 1;
+      for(let r=0; r<repeats; r++){
+        // 必殺は最初の1回のみ判定 (連続必殺で過剰になるのを防ぐ)
+        const eAct = (r === 0 && (eTeam[idx].ult||0) >= 100) ? 'ultimate' : 'normal';
+        queue.push({team:'e', idx, action: eAct, isBossExtra: r > 0});
+      }
     }
   });
   // V17: SPD降順、同値なら完全乱数で公平にコイン投げ (TimSort安定化バイアス対策)
@@ -9473,8 +9631,19 @@ function executeTurnQueue(queue, i){
   // ULTIMATE — separate cinematic path
   if(action === 'ultimate'){
     attacker.ult = 0;
+    // V53: ボスが必殺撃つ時はセリフ
+    if(!isPlayer && battleState.boss){
+      showBossSpeech(attacker, 'ult');
+    }
     executeUltimateInQueue(step.idx, isPlayer, queue, i);
     return;
+  }
+
+  // V53: ボス通常攻撃時、たまにセリフ (HP残量で大ピンチセリフへ切替)
+  if(!isPlayer && battleState.boss && !step.isBossExtra){
+    const hpRatio = attacker.hp / Math.max(1, attacker.maxHp);
+    const kind = hpRatio <= 0.3 ? 'low' : 'atk';
+    showBossSpeech(attacker, kind);
   }
 
   // Animate attacker
@@ -9582,22 +9751,95 @@ function executeUltimateInQueue(attackerIdx, isPlayer, queue, qIdx){
   }, 1500);
 }
 
+// V52: ボス必殺後の追加basic攻撃 (連続行動演出)
+function _bossExtraAttacks(eIdx, count){
+  if(!battleState || count <= 0) return;
+  const {pTeam, eTeam, pActives, eActives} = battleState;
+  const attacker = eTeam[eIdx];
+  if(!attacker || !attacker.alive){ actionLock = false; return; }
+
+  let delay = 0;
+  for(let i=0; i<count; i++){
+    setTimeout(() => {
+      if(!battleState) return;
+      if(!attacker.alive) return;
+      const targetIdx = pickRandomTarget(pTeam, pActives);
+      if(targetIdx < 0) return;
+      const target = pTeam[targetIdx];
+      const result = calcDamage(attacker, target, 'normal');
+      attacker.ult = Math.min(100, (attacker.ult||0) + 12);
+      if(target) target.ult = Math.min(100, (target.ult||0) + 5);
+
+      const slot = eActives.indexOf(eIdx);
+      const afEl = document.getElementById(`af-e-${slot}`);
+      if(afEl){ afEl.classList.add('attacking-r'); setTimeout(()=>afEl.classList.remove('attacking-r'),400); }
+
+      if(!result.miss){
+        target.hp -= result.dmg;
+        if(target.hp <= 0){ target.hp = 0; target.alive = false; }
+        SFX[result.crit?'crit':'hit']();
+        const tSlot = pActives.indexOf(targetIdx);
+        const tEl = document.getElementById(`af-p-${tSlot}`);
+        if(tEl){
+          tEl.classList.add('hurt');
+          setTimeout(()=>tEl.classList.remove('hurt'),350);
+          spawnDamagePopup(tEl, result.dmg, result.crit);
+        }
+      } else {
+        const tSlot = pActives.indexOf(targetIdx);
+        const tEl = document.getElementById(`af-p-${tSlot}`);
+        if(tEl) spawnDamagePopup(tEl, 'MISS', false, true);
+      }
+      if(result.msg) showLog(result.msg);
+      renderBattle();
+    }, delay);
+    delay += 450;
+  }
+  setTimeout(() => {
+    if(!battleState) return;
+    refillActives(pTeam, pActives, 3);
+    refillActives(eTeam, eActives, 1);
+    renderBattle();
+    if(aliveActives(pTeam, pActives).length === 0){
+      endBattle('lose'); actionLock = false; return;
+    }
+    actionLock = false;
+    if(autoBattle) setTimeout(autoBattleStep, 500);
+  }, delay + 300);
+}
+
 function enemyMultiTurn(){
   if(!battleState) return;
-  const {pTeam, eTeam, pActives, eActives, boss} = battleState;
+  const {pTeam, eTeam, pActives, eActives, boss, di} = battleState;
   const enemyActs = aliveActives(eTeam, eActives);
   if(enemyActs.length === 0){
     actionLock = false;
     return;
   }
-  // Check if enemy has any ultimate ready → use it
+  // V52: ボス行動回数を深度でスケール
+  //   D1〜D16:  2回 / D17〜D24: 3回 / D25+: 4回 / 最終ステージ: 5回
+  //   通常エネミー: 1回 (変更なし)
+  const depth = (di != null && di >= 0) ? di : 0;
+  let bossAttacks = 2;
+  if(depth >= 25) bossAttacks = 4;
+  else if(depth >= 17) bossAttacks = 3;
+  // 限定/最終ボス (battleState.isLimited) はさらに +1
+  if(battleState.isLimited) bossAttacks += 1;
+  // PvPはbossフラグfalseなのでこのスケールは効かない (normalルート)
+
+  // V52: ULT準備完了でも 1段+追加basic で複数行動を保証
   const enemyUltIdx = enemyActs.find(i => (eTeam[i].ult||0) >= 100);
   if(enemyUltIdx !== undefined){
     executeUltimate(enemyUltIdx, true);
+    if(boss){
+      // 必殺後に追加でbasic攻撃 (boss行動回数 - 1 回)
+      const extra = Math.max(1, bossAttacks - 1);
+      setTimeout(() => _bossExtraAttacks(enemyUltIdx, extra), 1200);
+    }
     return;
   }
-  // Boss attacks multiple times (3 times to balance vs 3 players)
-  const attacksPerEnemy = boss ? 3 : 1;
+  // Boss multi-attack (V52: 深度に応じて2-5回)
+  const attacksPerEnemy = boss ? bossAttacks : 1;
   const totalAttacks = [];
   enemyActs.forEach(eIdx => {
     for(let i=0; i<attacksPerEnemy; i++) totalAttacks.push(eIdx);
@@ -9656,6 +9898,553 @@ function enemyMultiTurn(){
     actionLock = false;
     if(autoBattle) setTimeout(autoBattleStep, 500);
   }, delay + 300);
+}
+
+// ============================================================
+// V53: ボスのドラクエ風セリフ集 (神話ベース)
+// 各キーは SPECIES.id、 atk=通常攻撃、ult=必殺、low=HP30%以下、appear=登場時
+// ============================================================
+const BOSS_QUOTES = {
+  // === GOD/MYTHIC (神話ベース) ===
+  amaterasu: {
+    appear:['太陽はわが手の中。闇は朕を覆えぬ。','天岩戸を越え、再び光あれ。'],
+    atk:['朕の光を浴びて消えよ。','日輪、燃え盛れ！','八咫鏡の輝きを受けよ。','汝の影、太陽に焼かれん。'],
+    ult:['天照神拳───日輪墜とし！','八咫の鏡よ、敵を映し滅せよ！','大日輪閃光───！'],
+    low:['朕は……まだ沈まぬ……！','天の岩戸はもう開かぬ……','日蝕の時、力を貯めん…'],
+  },
+  zeus_thunder: {
+    appear:['オリュンポスの主、ゼウスである。震えよ。','雷霆を持つ者の前に膝をつけ。'],
+    atk:['雷霆を受けよ！','うぬぼれた小僧め！','ケラウノスよ、墜ちろ！','汝の運命は決した。'],
+    ult:['天空神絶技───雷霆爆裂砲！','オリュンポスの怒り、ここに在り！','黄金雷───！'],
+    low:['さすが…手応えがある…','タルタロスに堕ちる前に、もう一撃…','人間ごときに、このゼウスが…'],
+  },
+  poseidon_tide: {
+    appear:['七つの海はわが領分。','三叉戟の前にひれ伏すがよい。'],
+    atk:['大津波、汝を呑む！','深海の冷気を浴びよ！','三叉戟の一突き！','海神の意思に抗えるか！'],
+    ult:['海神波濤───大海嘯！','ポセイドンクェイク───！'],
+    low:['潮目が悪い…だが、まだ引かぬ！','海は…必ず汝に復讐する…'],
+  },
+  hades_underworld: {
+    appear:['死者の王、ハーデス。汝も冥府の眷属となれ。','黄泉の門は開いた。逃れる術はない。'],
+    atk:['冥界の冷気、汝を凍らせる！','ケルベロスよ、噛み裂け！','死の刃を受けよ。','タナトスの息吹を…'],
+    ult:['冥府絶対零度───エレボス・コフィン！','黒き炎よ、魂を焼き尽くせ！'],
+    low:['冥府でも…汝の名を覚えておこう…','まだ…まだ死ねぬ…'],
+  },
+  apollo_sun: {
+    appear:['予言は告げる──汝の敗北を。','光と弓、わが二つの力を見せよう。'],
+    atk:['太陽の弓矢───！','音楽神の調べを聞きながら散れ。','光速の一矢！','汝の未来を撃ち抜く！'],
+    ult:['太陽神弓───アポロン・ヘリオス！','黄金の矢、千本同時射！'],
+    low:['予言が…外れるとは…','まだ歌は終わっておらぬ…'],
+  },
+  athena_wisdom: {
+    appear:['知略を持って汝を粉砕する。','戦女神アテナ。準備はよいか。'],
+    atk:['アイギスの盾は割れぬ。','智慧の槍を受けよ。','戦術は完璧だ。','汝の動きは読めている。'],
+    ult:['知略絶技───アテナ・ストラテジア！','メドゥーサの瞳を直視せよ！'],
+    low:['まさか…私の戦術が…','フクロウよ、援護を…'],
+  },
+  odin_allfather: {
+    appear:['全父オーディン。ヴァルハラへの道を歩むがよい。','片目の代わりに、わしは全てを見通す。'],
+    atk:['グングニルの槍、必中！','フギンとムニンよ、見届けよ。','ルーンの呪詛を浴びよ。','九つの世界の重みを知れ！'],
+    ult:['全父絶技───グングニル・ラグナロク！','ヴァルハラの戦士よ、突撃！'],
+    low:['ラグナロクは…まだだ…','ミーミルよ、知恵を貸せ…'],
+  },
+  freyja: {
+    appear:['ヴァナヘイムの戦女神、フレイヤ。','涙の黄金もて、汝を彩らん。'],
+    atk:['ブリージンガメンの輝き！','戦乙女の剣を受けよ！','フォルクヴァングへ案内する。','猫の戦車を踏み散らせ！'],
+    ult:['戦女神絶技───フレイヤ・セイズル！'],
+    low:['黄金の涙が…止まらぬ…'],
+  },
+  thor_thunder: {
+    appear:['ミョルニルの一撃を見せてやろう！','雷の音を聞け、矮人ども！'],
+    atk:['ミョルニル、飛べ！','雷神の鎚撃！','ヤギの戦車、踏み潰せ！','ヨルムンガンドにも勝つ！'],
+    ult:['雷神絶技───ミョルニル・ストライク！'],
+    low:['まだ…まだ振るえる…','メギンギョルズの力を…'],
+  },
+  ryujin_dragon: {
+    appear:['龍宮の主、リュウジン。海底に沈めよう。','潮満玉と潮干玉、わが手の中。'],
+    atk:['龍の咆哮を聞け！','潮満玉───大潮よ満ちろ！','龍王の鱗、傷つかぬ。','深海より参った。'],
+    ult:['龍神絶技───潮満潮干・大津波！'],
+    low:['玉手箱を…開けてはならぬ…','龍宮には…まだ帰れぬ…'],
+  },
+  bahamut_prime: {
+    appear:['全竜の頂点、バハムートPRIME。','我は古き竜の王なり。'],
+    atk:['メガフレア、放て！','竜の息吹を受けよ！','古竜の咆哮を聞け！','永劫の炎、汝を焼く！'],
+    ult:['全竜絶技───バハムート・テラフレア！','メガフレアX───！'],
+    low:['竜は…まだ滅びぬ…','創世の炎を…再点火する…'],
+  },
+  tiamat_chaos: {
+    appear:['原初の海より参った、混沌の母ティアマト。','五つの頭、汝を見据える。'],
+    atk:['五頭竜の咆哮！','混沌の波、押し寄せよ！','原初の竜気を浴びよ！','汝も我が子となれ。'],
+    ult:['混沌絶技───ティアマト・カオスフレア！'],
+    low:['マルドゥクよ…許さぬ…','原初に…還る時か…'],
+  },
+  quetzalcoatl_serpent: {
+    appear:['翼ある蛇、ケツァルコアトル。風を従えて参った。','金星のごとく光らん。'],
+    atk:['風の刃を受けよ！','翼蛇の毒牙、刺さらん！','五彩の風よ、舞え！','古マヤの怒り、知れ！'],
+    ult:['風蛇絶技───ケツァルコアトル・テンプル！'],
+    low:['黒曜石の鏡が…曇る…'],
+  },
+  genesis_prime: {
+    appear:['汝、創造主に挑むか。愚かなり。','我は始まりにして終わり。'],
+    atk:['原初の光、汝を消す。','創世の力を受けよ。','存在ごと書き換える。','宇宙の理を曲げる。'],
+    ult:['創世神絶技───ジェネシス・リライト！','ビッグバン───再演！'],
+    low:['想定外…か。面白い…','汝こそ次代の創造主かもしれぬ…'],
+  },
+  cosmic_architect: {
+    appear:['宇宙の設計者、コズミックアーキテクト。','汝の存在を計算式から消去する。'],
+    atk:['量子崩壊、開始。','時空の歪みを浴びよ。','次元の壁、汝を呑む。','確率を0に書き換える。'],
+    ult:['宇宙建築絶技───ユニバース・リシェイプ！'],
+    low:['予測外の変数…か。','再計算が必要だ…'],
+  },
+  infernox_omega: {
+    appear:['業火の王、インフェルノックスΩ。汝を灰にする。','地獄の門、開け。'],
+    atk:['業火の咆哮！','獄炎、汝を呑め！','焦土と化せ！','灼熱の刃を受けよ！'],
+    ult:['業火絶技───オメガ・インフェルノ！'],
+    low:['まだ…燃え盛れる…','業火は消えぬ…'],
+  },
+  void_emperor: {
+    appear:['虚無の皇帝。汝の存在を空に還す。','光なき世界へようこそ。'],
+    atk:['虚無の刃、貫け！','汝の魂を吸う。','存在を消去する。','闇の絶対者、参上。'],
+    ult:['虚無絶技───ヴォイド・コラプス！'],
+    low:['まだ…無に還らぬ…','深淵が…呼んでいる…'],
+  },
+  kali_destroyer: {
+    appear:['破壊神カーリー。汝の血を捧げよ。','四本の腕で滅ぼす。'],
+    atk:['カーリーの舌、舐めよ！','髑髏の首飾り、新たに一つ。','破壊の舞、見せん！','血の女神を讃えよ！'],
+    ult:['破壊絶技───カーリー・タンダヴァ！'],
+    low:['シヴァよ…介入するか…','破壊の踊りは…まだ続く…'],
+  },
+  aphrodite: {
+    appear:['美の女神アフロディーテ。汝を魅了して堕とす。','戦も愛もわが手の中。'],
+    atk:['美の絶対王者を見よ！','メロディアの矢、心を射貫け！','黄金のリンゴを賭けよう。','汝はわが美に屈する。'],
+    ult:['美神絶技───アフロディーテ・カリス！'],
+    low:['まだ…美しくあれる…','エロスよ、援護を…'],
+  },
+  isis_queen: {
+    appear:['イシス女王。死を司り、再生を司る。','汝の魂、計量する。'],
+    atk:['ホルスの目を授ける。','蘇生の翼を受けよ。','ナイル川の氾濫を見せん！','千の名を持つ女王だ。'],
+    ult:['女王絶技───イシス・レゾレクション！'],
+    low:['まだ…眠らせはせぬ…'],
+  },
+  // === MYTHIC ===
+  genesis: {
+    appear:['原初の力、覚醒。','汝、世界の創造を見るがよい。'],
+    atk:['創世の光線！','原始の咆哮！','宇宙の鼓動を聞け！'],
+    ult:['創世絶技───ジェネシス・ボム！'],
+    low:['まだ…創れる…'],
+  },
+  primordial: {
+    appear:['プリモーディアル、太古より目覚めし者。'],
+    atk:['原初の力、汝を粉砕する！','太古の咆哮を聞け！'],
+    ult:['原初絶技───プリモーディアル・カオス！'],
+    low:['古き者は…まだ眠らぬ…'],
+  },
+  eternalon: {
+    appear:['永劫を生きる者、エテルナロン。'],
+    atk:['永遠の時間、汝には無い。','時の循環に堕ちよ！','輪廻を支配する。'],
+    ult:['永劫絶技───エテルナル・ループ！'],
+    low:['時を…巻き戻す…か…'],
+  },
+};
+
+// === 汎用フォールバック (個別未定義の場合) ===
+const BOSS_QUOTES_GENERIC = {
+  dragon: {
+    atk:['竜の咆哮を聞け！','息吹を浴びせる！','古き竜の力を見よ！','汝の鎧を貫く！'],
+    ult:['竜絶技───ドラゴン・ブレス！'],
+    low:['まだ…翼は折れぬ…','竜は不死だ…'],
+    appear:['古き竜、目覚めし。'],
+  },
+  fire: {
+    atk:['炎よ、燃えよ！','焼き尽くす！','灼熱の刃！'],
+    ult:['炎絶技───インフェルノ・バースト！'],
+    low:['まだ…消えぬ…'],
+    appear:['炎を恐れぬか。'],
+  },
+  water: {
+    atk:['波濤、汝を呑む！','深海の冷気を浴びよ！','潮流に堕ちよ！'],
+    ult:['水絶技───タイダル・ウェイブ！'],
+    low:['潮目が…悪い…'],
+    appear:['深海より参った。'],
+  },
+  dark: {
+    atk:['闇に呑まれよ！','虚無の刃！','汝の魂を吸う！'],
+    ult:['闇絶技───ダーク・コラプス！'],
+    low:['光が…眩しい…'],
+    appear:['闇の使者である。'],
+  },
+  light: {
+    atk:['光の裁き！','聖なる刃を受けよ！','汝の罪を見抜く！'],
+    ult:['光絶技───ホーリー・ジャッジ！'],
+    low:['光は…まだ消えぬ…'],
+    appear:['神の使いである。'],
+  },
+  cosmic: {
+    atk:['星の力を借りる！','銀河の脈動を受けよ！','次元を超えて打つ！'],
+    ult:['宇宙絶技───コズミック・ノヴァ！'],
+    low:['宇宙は…まだ広い…'],
+    appear:['星々より参った。'],
+  },
+  plant: {
+    atk:['茨よ、絡め！','根よ、貫け！'],
+    ult:['草木絶技───フォレスト・グラスプ！'],
+    low:['根は…枯れぬ…'],
+    appear:['森の主、汝を許さぬ。'],
+  },
+  beast: {
+    atk:['爪を剥け！','牙で噛み裂く！','野生の本能！'],
+    ult:['獣絶技───ビースト・フェロシティ！'],
+    low:['まだ…牙はある…'],
+    appear:['獣の王が来た。'],
+  },
+  psy: {
+    atk:['汝の心を読んだ。','念波で押し潰す！','精神の壁を突破！'],
+    ult:['念絶技───サイキック・コラプス！'],
+    low:['思考が…乱れる…'],
+    appear:['汝の動きは予知済みだ。'],
+  },
+  mech: {
+    atk:['火力全開！','機械の精度を見よ！','ロックオン完了。'],
+    ult:['機械絶技───オーバーロード・キャノン！'],
+    low:['システムが…損傷した…'],
+    appear:['戦闘モード起動。'],
+  },
+  wind: {
+    atk:['疾風一閃！','風の刃！'],
+    ult:['風絶技───テンペスト・スラッシュ！'],
+    low:['風が…止まる…'],
+    appear:['風と共に来た。'],
+  },
+  // generic boss (タイプ不明時のラスト fallback)
+  default: {
+    atk:['くらえ！','汝には勝てぬ！','終わりだ。','油断したな！'],
+    ult:['秘奥義───解放！'],
+    low:['まだ…倒れぬ…','力を…貯めよ…'],
+    appear:['汝の挑戦、受けて立つ。'],
+  },
+};
+
+// ============================================================
+// V54: ナラティブ集 — 三人称の状況解説 ({name}が置換される)
+// ドラクエ/UNDERTALEのように "○○は○○している" 系の地の文
+// セリフより頻度多め (70%ナラティブ / 30%セリフ)
+// ============================================================
+const BOSS_NARRATIVES = {
+  // ボス個別の解説 ({name}は実行時に置換)
+  amaterasu: {
+    appear:['{name}は天岩戸を背に降臨した。','{name}は太陽の光をまとっている。','{name}は神鏡を構えた。','{name}の登場で空気が暖かくなった。','{name}は黄金の十二単を翻している。','{name}の周囲が明るく輝いている。','{name}は神々の歓声と共に現れた。','{name}は太陽神らしい威厳を放っている。'],
+    atk:['{name}は日輪を解き放った！','{name}は神聖な光を放っている。','{name}は炎の輪を投げつけた！','{name}は朝日の鋭さで切り裂いた！','{name}は神々しい雰囲気を漂わせている。','{name}は微笑みながら攻撃した。','{name}は陽炎をまとって突進した！','{name}の光線が空気を焼いている。','{name}は八咫鏡を翳して反射光を放った！','{name}は神楽の舞いを舞いながら打撃を加えた。','{name}は静かに、しかし容赦なく攻撃を加えた。','{name}の指先から日輪が解き放たれた！','{name}は祝詞を唱えながら攻撃している。','{name}は柔らかな手で痛烈に殴った！','{name}の振る舞いは威厳に満ちている。','{name}は太陽の周りを舞っているようだ。','{name}は雅な姿勢のまま一撃を放った。','{name}は涙を流しながら攻撃している。'],
+    ult:['{name}は天の意思を受け取った！','{name}は太陽を地に堕とそうとしている！','{name}は神鏡を捧げ持ち祈りを捧げている！','{name}の周囲に八百万の神々の気配が満ちた！','{name}は天岩戸の真の力を解放しようとしている！'],
+    low:['{name}は息を切らしている。','{name}の光が翳っている…','{name}は岩戸に隠れる体制に入った。','{name}は十二単が乱れている。','{name}は神官を呼び寄せようとしているようだ。','{name}は天の岩戸の記憶を思い出している様子だ。','{name}は祝詞を強く唱え始めた。'],
+    idle:['{name}は静かに目を閉じている。','{name}は次の動きを見極めている。','{name}は周囲を見渡している。','{name}は神官の祈りを聞いているようだ。','{name}は天上の風を感じている。','{name}は遥か高天原を見上げている。','{name}は神鏡に映る何かを見つめている。'],
+  },
+  zeus_thunder: {
+    appear:['{name}は天空から舞い降りた。','{name}はオリュンポスの威厳を放っている。','{name}は黄金の雷霆を握っている。','{name}の登場で空が暗くなった。','{name}は雷鳴を伴って現れた。','{name}は王者の風格で歩み出た。','{name}の眼光が稲妻のように鋭い。','{name}の周囲には電気が走っている。'],
+    atk:['{name}は雷霆を振り下ろした！','{name}の周りに稲妻が走っている。','{name}は怒りに満ちている。','{name}は容赦なく稲妻を放った！','{name}は嘲笑するような表情を浮かべた。','{name}は黄金の鷲を従えて舞い降りた。','{name}は雷で空気を切り裂いた！','{name}の指先から電撃が迸っている。','{name}は天上から見下す姿勢で攻撃した。','{name}は雷神らしい威圧感を放っている。','{name}の周囲が帯電し始めた。','{name}は王座から立ち上がって攻撃した！','{name}はケラウノスを振り回している。','{name}は雷鳴と共に拳を振った！','{name}は地上を見下す姿勢で稲妻を放った！','{name}の体から電光が放たれている。','{name}は地響きを起こす一撃を加えた！','{name}は雷の轟きで威圧している。','{name}の髪が雷光に揺れている。','{name}は天空神らしい余裕を見せている。'],
+    ult:['{name}は天空に手を掲げた！','{name}は最大級の雷霆を蓄えている！','{name}はオリュンポスの全雷を呼び寄せている！','{name}の眼が雷光で爛々と光った！','{name}は黄金の鷲を空に放った！'],
+    low:['{name}は片膝をついた。','{name}の雷が弱まっている…','{name}は深く息を吐いた。','{name}は怒りの形相になった。','{name}は冠が傾いている。','{name}はオリュンポスへ撤退しそうな雰囲気だ。','{name}は最後の雷霆を蓄えている様子だ。','{name}は雷雲を呼ぼうとしている。'],
+    idle:['{name}は雲の上から見下ろしている。','{name}は静かに雷を充電している。','{name}は次の一撃を見定めている。','{name}は黄金の鷲と何かを語り合っている。','{name}は天空の遥か彼方を見つめている。','{name}は王者らしい余裕を漂わせている。','{name}は雷霆を弄んでいる。'],
+  },
+  poseidon_tide: {
+    appear:['{name}は深海から浮上した。','{name}は三叉戟を構えた。','{name}の周りには潮の香りが満ちている。','{name}は青い髪をなびかせている。','{name}は海王の威厳と共に登場した。','{name}の足元から海水が湧き上がっている。','{name}はイルカと共に現れた。'],
+    atk:['{name}は三叉戟を突き出した！','{name}は大波を呼び寄せた！','{name}の鱗が光っている。','{name}は冷たい眼で見据えている。','{name}は海流を操っている。','{name}は嘲るように笑った。','{name}は潮の渦を生み出した！','{name}は塩風で攻撃した！','{name}は深海の圧力を加えた！','{name}は海神の怒りを露わにした。','{name}は三叉戟で地面を叩いた！','{name}は流麗な動きで一撃を加えた。','{name}の周りに渦巻きが生まれている。','{name}は鯨の咆哮を呼び寄せた！','{name}は冷たく無慈悲な眼差しで攻撃している。','{name}は満ち潮のごとく押し寄せた！','{name}は氷の刃で切り裂いた！','{name}は荘厳な姿で攻撃している。'],
+    ult:['{name}は大津波を呼び込もうとしている！','{name}は海全体を味方につけた！','{name}は深海の女神たちを呼び寄せている！','{name}の三叉戟が青く輝き始めた！'],
+    low:['{name}は潮が引くのを感じている…','{name}の鱗が乾いてきた。','{name}は防御の体制に入った。','{name}は三叉戟が折れそうになっている。','{name}は海に帰りたそうな様子だ。','{name}は最後の波を呼ぼうとしている。','{name}は静かに引き潮を待っている。'],
+    idle:['{name}は波を読んでいる。','{name}は静かに潮流を操っている。','{name}は深海に視線を落としている。','{name}はイルカと戯れている。','{name}は三叉戟を弄んでいる。','{name}は海王の威厳をたたえて立っている。','{name}は遥か水平線を見つめている。'],
+  },
+  hades_underworld: {
+    appear:['{name}は冥府の門を開いた。','{name}は黒い霧をまとっている。','{name}はケルベロスを従えている。','{name}は冷気と共に現れた。','{name}の登場で気温が下がった。','{name}は死神らしい黒衣を翻している。','{name}は無音で出現した。','{name}の背後には黄泉の道が見える。'],
+    atk:['{name}は死の冷気を放った！','{name}は黒炎の刃を振るった！','{name}は無表情で攻撃している。','{name}の手から黄泉の風が吹いている。','{name}は影に紛れて打撃した！','{name}は死者の名を呟いた。','{name}はケルベロスに命令を下した！','{name}は冥府の鎌を振り回した！','{name}は静かに、しかし確実な一撃を加えた。','{name}は氷のような視線を投げかけた。','{name}は影の手を伸ばした！','{name}の周りに亡霊が舞っている。','{name}は冷酷に魂を狙っている。','{name}は黄泉比良坂を開きそうだ。','{name}は死者の呻きを伴って攻撃している。','{name}は冷たい笑みを浮かべた。','{name}は鎌で振り抜いた！','{name}の影が伸びて襲いかかった！','{name}は静寂を保ちながら殺意を込めた打撃を加えた。'],
+    ult:['{name}は冥府の全力を解放している！','{name}は魂を刈り取ろうとしている！','{name}はタルタロスの底を覗き込もうとしている！','{name}の黒衣がうねり始めた！'],
+    low:['{name}は王座から立ち上がった。','{name}の影が薄くなっている…','{name}は黄泉の力を集めている。','{name}は冷気が弱まってきた様子だ。','{name}はケルベロスを呼んで援護させようとしている。','{name}は冥府に帰りたそうな素振りを見せた。','{name}は最後の魂を刈り取ろうとしている。'],
+    idle:['{name}は静かに王座に座っている。','{name}は死者の魂を数えている。','{name}は冷たい視線を送っている。','{name}はケルベロスの頭を撫でている。','{name}は鎌の刃を磨いている。','{name}は黄泉の道を眺めている。','{name}は冥府の判決を下している。'],
+  },
+  apollo_sun: {
+    appear:['{name}は太陽の戦車から降りた。','{name}は黄金の弓を構えた。','{name}は朝日と共に現れた。','{name}は美しい姿で戦場に立った。','{name}は予言の書を手にしている。','{name}は竪琴の音色と共に登場した。','{name}の周りに光輪が見える。'],
+    atk:['{name}は光速の矢を放った！','{name}は遠くから狙撃している。','{name}は美しい姿勢で弓を引いた。','{name}は予言を呟きながら撃った。','{name}は太陽の輝きを増した。','{name}は竪琴を奏でながら攻撃した。','{name}は無数の矢を同時に射た！','{name}の矢には太陽の光が宿っている。','{name}は優雅な構えで一撃を放った。','{name}は冷静沈着に狙いを定めた。','{name}は黄金の弦を弾いた！','{name}は風を切る一矢を放った！','{name}は微笑みながら攻撃している。','{name}の弓矢は決して外れない様子だ。','{name}は神々しい姿勢で構えている。','{name}は華麗な動きで一撃を加えた。','{name}は予言通りの一撃を放った！','{name}の矢が空気を切り裂いている。'],
+    ult:['{name}は千の矢を空に放とうとしている！','{name}は太陽の力を集めている！','{name}は神弓の真の威力を解放しようとしている！','{name}の頭上に黄金の光輪が現れた！'],
+    low:['{name}の輝きが弱まっている。','{name}は予言が外れたことに困惑している。','{name}は集中を取り戻そうとしている。','{name}は弦が切れそうになっている。','{name}は最後の矢を準備している。','{name}は太陽の力を集めようとしている。'],
+    idle:['{name}は静かに弓を構えている。','{name}は予言の詩を口ずさんでいる。','{name}は太陽を見つめている。','{name}は竪琴の弦を調整している。','{name}は次の標的を見定めている。','{name}は天空の太陽と語らっているようだ。'],
+  },
+  athena_wisdom: {
+    appear:['{name}はアイギスの盾を構えた。','{name}は冷静な目で戦場を見ている。','{name}はフクロウを肩に乗せている。','{name}は知性的な眼差しを向けている。','{name}は完璧な装備で登場した。','{name}は無駄のない動きで現れた。','{name}は戦術書を手にしている。'],
+    atk:['{name}は計算された一撃を放った！','{name}は知略的な動きで攻撃した。','{name}は無駄のない剣捌きを見せた。','{name}はアイギスの盾で防ぎながら反撃した！','{name}は冷静に観察している。','{name}は完璧な角度で攻撃した！','{name}は最適解の一手を打った！','{name}は静かに、しかし鋭い一撃を放った。','{name}は予想を裏切る軌道で攻撃した。','{name}は無表情で確実な一撃を加えた。','{name}は槍を高速で突き出した！','{name}の盾にはメドゥーサの顔がある。','{name}はフクロウの助言を聞きながら攻撃した。','{name}は数学的な美しさで剣を振った！','{name}は機械のような正確さで攻撃している。','{name}は冷徹に弱点を狙った！','{name}は計算高い表情を浮かべている。','{name}は戦術通りに完璧に動いた！'],
+    ult:['{name}は最終戦術を発動しようとしている！','{name}は知恵の極致を放とうとしている！','{name}はアテナ・ストラテジアを準備している！','{name}の盾が眩く輝き始めた！'],
+    low:['{name}は戦術を練り直している…','{name}は集中の表情を強めた。','{name}は防御の体制に入った。','{name}はアイギスの盾を強く握り直した。','{name}は次の一手を計算している。','{name}はフクロウに偵察を頼んだ。'],
+    idle:['{name}は戦場を分析している。','{name}は静かに次の手を考えている。','{name}は弱点を探している。','{name}はフクロウと小声で話している。','{name}は槍の手入れをしている。','{name}は冷静沈着な雰囲気を漂わせている。','{name}は戦場の地形を把握している。'],
+  },
+  odin_allfather: {
+    appear:['{name}は片目で全てを見通している。','{name}はグングニルを携えている。','{name}は二羽の鴉を連れている。'],
+    atk:['{name}はグングニルを投擲した！','{name}はルーンの呪を放った！','{name}は古き戦神の威圧を放っている。','{name}は鴉の知らせを聞きながら攻撃した。','{name}は片目を細めて狙いを定めた。','{name}は呪歌を詠唱している。'],
+    ult:['{name}はラグナロクの一片を解放している！','{name}は九つの世界の力を集めている！'],
+    low:['{name}は片膝をついた。','{name}はミーミルの泉を思い出している。','{name}は最終呪文の準備をしている。'],
+    idle:['{name}は静かに戦況を見守っている。','{name}はルーンを刻んでいる。','{name}は鴉と何かを話している。'],
+  },
+  freyja: {
+    appear:['{name}は猫の戦車から降り立った。','{name}はブリージンガメンを輝かせている。','{name}は涙を流しながら微笑んだ。'],
+    atk:['{name}は黄金の剣を振るった！','{name}は戦乙女の力を解き放った！','{name}は美しい舞いで攻撃した。','{name}は黄金の涙を凍らせて放った！','{name}は猫を呼んで援護させた。','{name}は魅惑の歌を歌っている。'],
+    ult:['{name}はセイズルの極意を放とうとしている！','{name}は黄金の涙を全て放出している！'],
+    low:['{name}の輝きが薄れている。','{name}は静かに涙を流している。','{name}は最後の魔法を準備している。'],
+    idle:['{name}は静かに鏡を覗いている。','{name}は涙を拭いている。','{name}は猫を撫でている。'],
+  },
+  thor_thunder: {
+    appear:['{name}はミョルニルを振りかざした。','{name}はヤギの戦車から降りた。','{name}は雷鳴と共に登場した。'],
+    atk:['{name}はミョルニルを投げつけた！','{name}は雷鳴と共に殴りつけた！','{name}は大笑いしながら攻撃した。','{name}は地響きを起こすほどの打撃を放った！','{name}はメギンギョルズを締め直した。','{name}は咆哮を上げて突進した！'],
+    ult:['{name}は天空に向かってミョルニルを掲げた！','{name}は雷霆神の真の力を解放している！'],
+    low:['{name}は息を切らしている。','{name}は腹部を押さえた。','{name}は怒りを募らせている。','{name}は鉄手袋を強く握りしめた。'],
+    idle:['{name}は豪快に酒を飲んでいる。','{name}はミョルニルを磨いている。','{name}は次の戦いを楽しみにしているようだ。'],
+  },
+  ryujin_dragon: {
+    appear:['{name}は龍宮城から浮上した。','{name}は青龍の姿を解いた。','{name}は潮玉を両手に持っている。'],
+    atk:['{name}は龍の咆哮を放った！','{name}は潮満玉を放出している！','{name}は深海の冷気で凍らせた！','{name}は龍の爪で切り裂いた！','{name}の鱗が輝いている。','{name}は螺旋状に身をくねらせて攻撃した。'],
+    ult:['{name}は二つの玉を同時に放とうとしている！','{name}は大海嘯を呼び込もうとしている！'],
+    low:['{name}は鱗が剥がれ落ちている。','{name}は龍宮へ撤退する素振りを見せた。','{name}は最後の咆哮を準備している。'],
+    idle:['{name}は静かに海中を漂っている。','{name}は潮玉を弄んでいる。','{name}は次の海流を読んでいる。'],
+  },
+  bahamut_prime: {
+    appear:['{name}は古の眠りから目覚めた。','{name}は翼を広げて威圧している。','{name}は炎をまとって降臨した。'],
+    atk:['{name}はメガフレアの兆候を見せた！','{name}は古竜の咆哮を放った！','{name}は爪で大地を引き裂いた！','{name}の鱗が虹色に光っている。','{name}は永劫の炎を吐き出した！','{name}は翼で衝撃波を起こした！'],
+    ult:['{name}はテラフレアを蓄えている！','{name}は全ての竜の力を集めている！'],
+    low:['{name}の鱗にヒビが入った。','{name}は息を荒くしている。','{name}は最後の炎を集めようとしている。','{name}は翼が傷ついた。'],
+    idle:['{name}は古き記憶を辿っているようだ。','{name}は静かに翼を休めている。','{name}は遥か昔を思い出している。'],
+  },
+  tiamat_chaos: {
+    appear:['{name}は原初の海から這い上がってきた。','{name}は五つの頭で同時に咆哮した。'],
+    atk:['{name}は五頭から同時にブレスを放った！','{name}は原初の波を起こした！','{name}は混沌の毒を吐いた！','{name}は尾で大地を打ちつけた！','{name}は獰猛な咆哮で威圧している。','{name}は化物のような姿を見せつけた。'],
+    ult:['{name}は混沌の真の姿を見せようとしている！','{name}は原初の混沌を解放しようとしている！'],
+    low:['{name}の頭の一つが傷ついた。','{name}は怒り狂っている！','{name}は最後の力を振り絞ろうとしている。'],
+    idle:['{name}は鎌首をもたげている。','{name}は獲物を品定めしている。','{name}は獰猛に唸っている。'],
+  },
+  quetzalcoatl_serpent: {
+    appear:['{name}は虹色の羽を広げた。','{name}は風と共に舞い降りた。'],
+    atk:['{name}は風の刃を放った！','{name}は翼を羽ばたかせて衝撃波を起こした！','{name}は毒の牙で噛みついた！','{name}は黒曜石の鏡を翳した。','{name}は螺旋状に飛翔しながら攻撃した。','{name}は宝石の砂を撒き散らした。'],
+    ult:['{name}は古マヤの呪を解き放とうとしている！','{name}は五彩の風を集めている！'],
+    low:['{name}は羽が痛んでいる。','{name}は星座を読んでいる。','{name}は撤退の風を呼んだ。'],
+    idle:['{name}は静かに空を見上げている。','{name}は風を読んでいる。','{name}は古き神々と交信している。'],
+  },
+  genesis_prime: {
+    appear:['{name}は時空を歪めて現れた。','{name}は存在そのもので空気が震えている。'],
+    atk:['{name}は原初の光を放った！','{name}は宇宙の理を捻じ曲げた！','{name}は無詠唱で攻撃した。','{name}は時間を一瞬止めて殴った！','{name}は静かに微笑んだ。','{name}は世界を再書き換えしている。'],
+    ult:['{name}はビッグバンを再演しようとしている！','{name}は創造の全力を集めている！'],
+    low:['{name}は……まだ計算が合うはずだと呟いた。','{name}は予想外の事態に瞳を細めた。','{name}は最後の手段を考えている。'],
+    idle:['{name}は静かに存在している。','{name}は宇宙の調和を観察している。','{name}は時の流れを見つめている。'],
+  },
+  cosmic_architect: {
+    appear:['{name}は青写真を広げて現れた。','{name}は宇宙の式を空中に描いた。'],
+    atk:['{name}は量子崩壊を引き起こした！','{name}は確率を操作して攻撃した。','{name}は次元の壁を通り抜けて殴打した！','{name}は時空を歪めて打撃を加えた！','{name}は美しい幾何学パターンで攻撃した。','{name}は無音で襲いかかった。'],
+    ult:['{name}は宇宙の再設計を始めようとしている！','{name}はユニバース・リシェイプを発動しようとしている！'],
+    low:['{name}は再計算を始めた。','{name}は青写真にエラーを発見した。','{name}は別解を探している。'],
+    idle:['{name}は数式を解いている。','{name}は次元を観測している。','{name}は無表情で見つめている。'],
+  },
+  infernox_omega: {
+    appear:['{name}は獄炎をまとって登場した。','{name}は地獄の門を背負っている。'],
+    atk:['{name}は業火を吐き出した！','{name}は灼熱の爪で切り裂いた！','{name}は周囲を炎で取り囲んだ！','{name}は地獄の咆哮を放った！','{name}は溶岩のような体液を撒いた。','{name}は赤熱した拳で殴りつけた！'],
+    ult:['{name}はオメガ・インフェルノを蓄えている！','{name}は地獄の全力を解放しようとしている！'],
+    low:['{name}の炎が弱まっている。','{name}は燃え尽きそうな様相だ。','{name}は最後の業火を集めている。'],
+    idle:['{name}は静かに炎を燃やしている。','{name}は煙を吐き出している。','{name}は赤い眼で見つめている。'],
+  },
+  void_emperor: {
+    appear:['{name}は虚無から滲み出てきた。','{name}は無の玉座に座っている。'],
+    atk:['{name}は虚無の刃を振るった！','{name}は存在を吸収しようとしている！','{name}は影の触手を伸ばした！','{name}は無重力の打撃を加えた！','{name}は静寂のまま攻撃した。','{name}は無の波動を放った！'],
+    ult:['{name}はヴォイド・コラプスを発動しようとしている！','{name}は周囲を無に還そうとしている！'],
+    low:['{name}は虚無に飲まれそうになっている。','{name}は影が薄くなってきた。','{name}は深淵の呼び声を聞いているようだ。'],
+    idle:['{name}は静かに虚空を見つめている。','{name}は無音のままそこにいる。','{name}は時の流れを止めているようだ。'],
+  },
+  kali_destroyer: {
+    appear:['{name}は髑髏の首飾りをジャラジャラと鳴らした。','{name}は四本の腕で武器を構えた。','{name}は血の舞いを始めた。'],
+    atk:['{name}は四本の腕で同時に攻撃した！','{name}は破壊の舞いを舞っている！','{name}は長い舌を伸ばした！','{name}は血の刃を振り下ろした！','{name}は不気味な笑みを浮かべた。','{name}は獰猛に跳びかかった！'],
+    ult:['{name}はカーリー・タンダヴァを始めようとしている！','{name}は破壊の最終形態を解放しようとしている！'],
+    low:['{name}は血を吐いた。','{name}は怒り狂って唸っている。','{name}はシヴァを呼ぼうとしている。'],
+    idle:['{name}は静かに首飾りを撫でている。','{name}は血の海を見つめている。','{name}は破壊の旋律を口ずさんでいる。'],
+  },
+  aphrodite: {
+    appear:['{name}は黄金のリンゴを手に現れた。','{name}は微笑みながら戦場に降り立った。','{name}は美の波動を放っている。'],
+    atk:['{name}は魅惑の矢を放った！','{name}は美の波動で麻痺させた！','{name}は華麗な舞いで攻撃した。','{name}は黄金のリンゴを投げつけた！','{name}は唇を緩めて誘惑した。','{name}は鳩を放って援護させた。'],
+    ult:['{name}は美神の真の姿を見せようとしている！','{name}はカリスの極意を放とうとしている！'],
+    low:['{name}は化粧が剥がれてきた。','{name}は静かに微笑みを保っている。','{name}はエロスを呼んでいる。'],
+    idle:['{name}は鏡を覗いている。','{name}は花を弄んでいる。','{name}は微笑を絶やさない。'],
+  },
+  isis_queen: {
+    appear:['{name}は翼を広げて舞い降りた。','{name}は古代の杖を握っている。','{name}は神聖な紋様を空中に描いた。'],
+    atk:['{name}はホルスの目を解き放った！','{name}は神聖な杖を振った！','{name}は呪文を詠唱しながら攻撃した。','{name}は翼で衝撃波を起こした！','{name}は古代エジプトの呪を放った！','{name}は冷静に標的を見据えている。'],
+    ult:['{name}はイシス・レゾレクションを発動しようとしている！','{name}は千の名の力を集めている！'],
+    low:['{name}は翼を畳んだ。','{name}は神聖な力を集めている。','{name}は古代の呪文を準備している。'],
+    idle:['{name}は静かに天秤を見つめている。','{name}は古代文字を読んでいる。','{name}は無表情で見つめている。'],
+  },
+  genesis: {
+    appear:['{name}は原初の光をまとっている。','{name}は宇宙の鼓動を放っている。'],
+    atk:['{name}は創世の光を放った！','{name}は原始の咆哮を響かせた！','{name}は宇宙の脈動で攻撃した！','{name}は静かに圧力を放っている。'],
+    ult:['{name}はジェネシス・ボムを蓄えている！','{name}は世界の再生を試みている！'],
+    low:['{name}は原初の力が枯渇してきた。','{name}は最後の創造を試みている。'],
+    idle:['{name}は静かに在る。','{name}は宇宙の調和を保っている。'],
+  },
+  primordial: {
+    appear:['{name}は太古の眠りから目覚めた。','{name}は荒々しい霊気を放っている。'],
+    atk:['{name}は原初の力で殴打した！','{name}は太古の咆哮を放った！','{name}は獰猛に襲いかかった！'],
+    ult:['{name}はプリモーディアル・カオスを解放しようとしている！'],
+    low:['{name}は古き者の力が衰えている。','{name}は深い眠りに戻ろうとしている。'],
+    idle:['{name}は静かに眠っているようだ。','{name}は太古の時を感じている。'],
+  },
+  eternalon: {
+    appear:['{name}は永劫の時から現れた。','{name}は輪廻の輪を司っている。'],
+    atk:['{name}は時間を歪めて攻撃した！','{name}は永劫の刃を振るった！','{name}は時の循環で打撃した！'],
+    ult:['{name}はエテルナル・ループを発動しようとしている！'],
+    low:['{name}の時間が崩壊しはじめた。','{name}は時を巻き戻そうとしている。'],
+    idle:['{name}は時の流れを観察している。','{name}は永遠を見つめている。'],
+  },
+};
+
+// 汎用ナラティブ(タイプ別)
+const BOSS_NARRATIVES_GENERIC = {
+  dragon: {
+    atk:['{name}は爪を振り下ろした！','{name}は息吹を吐き出した！','{name}は翼で叩きつけた！','{name}は咆哮で威圧している。','{name}の鱗が輝いている。'],
+    ult:['{name}は古竜の真の力を解放しようとしている！'],
+    low:['{name}の翼が傷ついている。','{name}は咆哮を上げ続けている。'],
+    appear:['{name}は翼を広げて威圧している。','{name}は鋭い眼光で見据えている。'],
+    idle:['{name}は静かに翼を休めている。','{name}は古き竜の威厳を放っている。'],
+  },
+  fire: {
+    atk:['{name}は炎を吐き出した！','{name}は熱波で襲いかかった！','{name}は赤熱した拳で殴った！','{name}は周囲を焦がしている。'],
+    ult:['{name}は最大級の業火を集めている！'],
+    low:['{name}の炎が弱まっている。','{name}は煙を吐いている。'],
+    appear:['{name}は炎をまとって現れた。','{name}は熱波で空気を歪ませている。'],
+    idle:['{name}は静かに炎を燃やしている。','{name}は赤い眼で見つめている。'],
+  },
+  water: {
+    atk:['{name}は波で押し流そうとした！','{name}は冷気で凍らせようとしている！','{name}は水流の刃を放った！','{name}は深海の圧力を加えた！'],
+    ult:['{name}は大津波を呼び込もうとしている！'],
+    low:['{name}の水分が枯れてきた。','{name}は撤退の体制に入った。'],
+    appear:['{name}は水流をまとって現れた。','{name}は深海の冷気を放っている。'],
+    idle:['{name}は静かに波を読んでいる。','{name}は潮流を操っている。'],
+  },
+  dark: {
+    atk:['{name}は影の刃を振るった！','{name}は闇の波動を放った！','{name}は虚無の触手を伸ばした！','{name}は呪詛を呟いている。'],
+    ult:['{name}は闇の絶対者の力を解放しようとしている！'],
+    low:['{name}の影が薄くなってきた。','{name}は呪詛を強めている。'],
+    appear:['{name}は影から滲み出てきた。','{name}は黒い霧をまとっている。'],
+    idle:['{name}は静かに闇を見つめている。','{name}は不気味に佇んでいる。'],
+  },
+  light: {
+    atk:['{name}は神聖な光を放った！','{name}は裁きの刃を振るった！','{name}は祈りながら攻撃した。','{name}は眩い輝きを放っている。'],
+    ult:['{name}はホーリー・ジャッジを蓄えている！'],
+    low:['{name}の輝きが弱まっている。','{name}は祈りを強めている。'],
+    appear:['{name}は神々しい光をまとって現れた。','{name}は祈りの体勢を取っている。'],
+    idle:['{name}は静かに祈っている。','{name}は神聖な雰囲気を漂わせている。'],
+  },
+  cosmic: {
+    atk:['{name}は星の力で攻撃した！','{name}は次元を歪めて殴った！','{name}は宇宙の脈動を放った！','{name}は無音で攻撃した。'],
+    ult:['{name}はコズミック・ノヴァを発動しようとしている！'],
+    low:['{name}の次元が乱れている。','{name}は宇宙の調和を取り戻そうとしている。'],
+    appear:['{name}は時空を歪めて現れた。','{name}は星屑をまとっている。'],
+    idle:['{name}は静かに星を観測している。','{name}は宇宙と一体化している。'],
+  },
+  plant: {
+    atk:['{name}は茨で絡め取った！','{name}は根で地面から襲った！','{name}は花粉で攻撃した！'],
+    ult:['{name}はフォレスト・グラスプを発動しようとしている！'],
+    low:['{name}の葉が枯れ落ちている。','{name}は根を引いた。'],
+    appear:['{name}は根で大地を揺らしている。','{name}は森の主の威厳を放っている。'],
+    idle:['{name}は静かに葉を揺らしている。','{name}は森と交信している。'],
+  },
+  beast: {
+    atk:['{name}は牙で噛みついた！','{name}は爪で切り裂いた！','{name}は咆哮で威圧した！','{name}は獰猛に飛びかかった！'],
+    ult:['{name}はビースト・フェロシティを解放しようとしている！'],
+    low:['{name}は息を切らしている。','{name}は怒り狂っている。'],
+    appear:['{name}は獰猛に唸っている。','{name}は牙を剥き出した。'],
+    idle:['{name}は獲物を見据えている。','{name}は静かに獰猛に佇んでいる。'],
+  },
+  psy: {
+    atk:['{name}は念波で攻撃した！','{name}は精神を圧迫した！','{name}は思考で打撃を加えた！'],
+    ult:['{name}はサイキック・コラプスを蓄えている！'],
+    low:['{name}は思考が乱れている。','{name}は精神集中を取り戻そうとしている。'],
+    appear:['{name}は念を読んでいる。','{name}は冷静に佇んでいる。'],
+    idle:['{name}は静かに思考を巡らせている。','{name}は次の手を予知している。'],
+  },
+  mech: {
+    atk:['{name}は機械の精度で攻撃した！','{name}はキャノンを発射した！','{name}はミサイルを放った！','{name}はロックオンして撃った！'],
+    ult:['{name}はオーバーロード・キャノンを充填している！'],
+    low:['{name}のシステムが警告音を発している。','{name}は装甲が剥がれている。','{name}は再起動を試みている。'],
+    appear:['{name}は機械音と共に起動した。','{name}はステータスを表示している。'],
+    idle:['{name}は静かにスキャンしている。','{name}はターゲットを解析している。'],
+  },
+  wind: {
+    atk:['{name}は風の刃を放った！','{name}は疾風で攻撃した！','{name}は竜巻を起こした！'],
+    ult:['{name}はテンペスト・スラッシュを溜めている！'],
+    low:['{name}の風が弱まっている。','{name}は最後の風を集めている。'],
+    appear:['{name}は風と共に現れた。','{name}は疾風をまとっている。'],
+    idle:['{name}は静かに風を読んでいる。','{name}は風と一体化している。'],
+  },
+  default: {
+    atk:['{name}は攻撃を仕掛けてきた！','{name}は構えを取った。','{name}は強烈な一撃を放った！','{name}は容赦なく襲いかかった！','{name}は油断を突いた！'],
+    ult:['{name}は最終奥義を解放しようとしている！'],
+    low:['{name}は息を切らしている。','{name}は最後の力を振り絞ろうとしている。','{name}は撤退する素振りを見せた。'],
+    appear:['{name}は戦場に降り立った。','{name}は威圧的なオーラを放っている。'],
+    idle:['{name}は次の動きを見極めている。','{name}は静かに佇んでいる。','{name}は隙を伺っている。'],
+  },
+};
+
+// セリフ表示制御
+let _bossSpeechCooldown = 0;
+let _bossSpeechCount = 0;  // ナラティブ/セリフ比率の管理
+function getBossLine(monster, kind, useNarrative){
+  if(!monster) return null;
+  const sid = monster.spId;
+  // ナラティブ優先
+  if(useNarrative){
+    const np = BOSS_NARRATIVES[sid];
+    if(np && np[kind] && np[kind].length){
+      return {text: pick(np[kind]).replace(/\{name\}/g, monster.name), isNarrative: true};
+    }
+    const t = monster.type;
+    if(BOSS_NARRATIVES_GENERIC[t] && BOSS_NARRATIVES_GENERIC[t][kind] && BOSS_NARRATIVES_GENERIC[t][kind].length){
+      return {text: pick(BOSS_NARRATIVES_GENERIC[t][kind]).replace(/\{name\}/g, monster.name), isNarrative: true};
+    }
+    return {text: pick(BOSS_NARRATIVES_GENERIC.default[kind] || ['{name}は動かない。']).replace(/\{name\}/g, monster.name), isNarrative: true};
+  }
+  // セリフ
+  const personal = BOSS_QUOTES[sid];
+  if(personal && personal[kind] && personal[kind].length){
+    return {text: pick(personal[kind]), isNarrative: false};
+  }
+  const t = monster.type;
+  if(BOSS_QUOTES_GENERIC[t] && BOSS_QUOTES_GENERIC[t][kind] && BOSS_QUOTES_GENERIC[t][kind].length){
+    return {text: pick(BOSS_QUOTES_GENERIC[t][kind]), isNarrative: false};
+  }
+  return {text: pick(BOSS_QUOTES_GENERIC.default[kind] || ['…']), isNarrative: false};
+}
+function showBossSpeech(monster, kind){
+  // クールダウン制御で連発防止
+  const now = Date.now();
+  if(kind === 'atk' && now < _bossSpeechCooldown) return;
+  if(!battleState || !battleState.boss) return;
+  const ov = document.getElementById('battle-overlay');
+  if(!ov) return;
+  // 既存の吹き出しを除去
+  const old = ov.querySelector('.boss-speech');
+  if(old) old.remove();
+  // V54: 70%ナラティブ / 30%セリフ — atk/idle はナラティブ寄り、ult/low/appear はセリフ寄り
+  let useNarrative;
+  if(kind === 'atk' || kind === 'idle') useNarrative = Math.random() < 0.7;
+  else if(kind === 'ult')               useNarrative = Math.random() < 0.4;
+  else if(kind === 'low' || kind === 'appear') useNarrative = Math.random() < 0.5;
+  else useNarrative = Math.random() < 0.6;
+
+  const line = getBossLine(monster, kind, useNarrative);
+  if(!line || !line.text) return;
+  const tier = monster.god ? 'GOD' : monster.mythic ? 'MYTHIC' : '';
+  const bubble = document.createElement('div');
+  bubble.className = 'boss-speech' + (tier?' tier-'+tier:'') + (line.isNarrative?' narrative':'');
+  // ナラティブはカッコなし、セリフは「」付き
+  const txt = line.isNarrative ? line.text : `「${line.text}」`;
+  bubble.innerHTML = `
+    <div class="boss-speech-name">${monster.name}</div>
+    <div class="boss-speech-text">${txt}</div>
+    <div class="boss-speech-prompt">▼</div>
+  `;
+  ov.appendChild(bubble);
+  // 通常攻撃は3.4秒、必殺/登場は4秒の間隔をあける
+  _bossSpeechCooldown = now + (kind === 'atk' || kind === 'idle' ? 3400 : 4000);
+  // 3.6秒後に自然削除 (CSSアニメで3sフェード+0.35s)
+  setTimeout(()=>{ if(bubble.parentNode) bubble.remove(); }, 3600);
 }
 
 function spawnDamagePopup(targetEl, val, isCrit, isMiss){
@@ -12081,7 +12870,21 @@ function decodeTeamCode(code){
       const o = parseInt(ovr) || sp.base;
       const ev = parseInt(evo) || 0;
       const sks = skills ? skills.split('+').filter(x=>x) : [];
-      const baseStats = genStats(o);
+      // V52: PVP瞬殺バグ修正 — species定義からgod/mythic/legendaryを正しく復元し、
+      //      genStats に渡してmultiplier(GOD=1.55, MYTHIC=1.32等)を確実に適用。
+      //      さらに _buildMonster と同じ竜系GOD +12% ボーナスを再現。
+      const isGod = !!sp.god;
+      const isMythic = !!sp.mythic || o === 136 || isGod;
+      const realRarity = isGod ? 'GOD' : rarityFromOvr(o);
+      let baseStats = genStats(o, realRarity, isMythic, isGod);
+      // 竜系GODはATK/DEF/HP +12%, SPD +10%, CRT +5 (_buildMonsterと同等)
+      if(isGod && _isDragonSpecies(sp)){
+        baseStats.atk  = Math.round(baseStats.atk  * 1.12);
+        baseStats.def  = Math.round(baseStats.def  * 1.12);
+        baseStats.hp   = Math.round(baseStats.hp   * 1.12);
+        baseStats.spd  = Math.round(baseStats.spd  * 1.10);
+        baseStats.crit = Math.round(baseStats.crit + 5);
+      }
       // Apply evolution bonuses
       if(ev > 0){
         baseStats.atk += ev * 8;
@@ -12090,11 +12893,12 @@ function decodeTeamCode(code){
       }
       return {
         spId: sp.id, name: sp.name, art: sp.art, img: sp.img || null,
-        type: sp.type, ovr: o, rarity: rarityFromOvr(o),
+        type: sp.type, ovr: o, rarity: realRarity,
         evo: ev, skills: sks,
         stats: baseStats,
         legendary: sp.legendary || o >= 130,
-        mythic: sp.mythic || o === 136,
+        mythic: isMythic,
+        god: isGod,
         hp: baseStats.hp, maxHp: baseStats.hp, burn: 0, alive: true,
       };
     }).filter(x => x);
