@@ -5700,6 +5700,8 @@ function _hydrateStateAfterLoad(s){
   }
   // V66: 既存GODに新ボーナス遡及適用 (1回だけ実行)
   _migrateGodStatsV66(s);
+  // V68: V66の+8% を +10%に追加底上げ (1回だけ実行)
+  _migrateGodStatsV68(s);
   return s;
 }
 
@@ -5744,6 +5746,40 @@ function _migrateGodStatsV66(s){
   s._godStatsV66Applied = true;
   if(migrated > 0){
     console.log(`V66 migration: GOD stats boosted on ${migrated} monsters`);
+  }
+}
+
+// V68: 一般GODをさらに底上げ (+8% → +10%)
+//   既存ステに対する追加デルタ = 1.10 / 1.08 ≈ 1.01852 (atk/def/hp)
+//   spd:         1.08 / 1.06 ≈ 1.01887
+//   crit:        +1 (3→4)
+//   竜系と例外GOD(Genesis/Cosmic)は変更なし
+function _migrateGodStatsV68(s){
+  if(!s || !s.monsters || s._godStatsV68Applied) return;
+  let migrated = 0;
+  s.monsters.forEach(m => {
+    if(!m.god || !m.stats) return;
+    const sp = SPECIES.find(x => x.id === m.spId);
+    if(!sp) return;
+    // 竜系・例外GODは変更なし (既にdragon levelなので)
+    if(_isDragonSpecies(sp) || _GOD_EXCEPTION_IDS.has(sp.id)) return;
+    // 一般GODのみ追加バフ
+    const oldHp = m.stats.hp;
+    m.stats.atk  = Math.round(m.stats.atk  * (1.10 / 1.08));
+    m.stats.def  = Math.round(m.stats.def  * (1.10 / 1.08));
+    m.stats.hp   = Math.round(m.stats.hp   * (1.10 / 1.08));
+    m.stats.spd  = Math.round(m.stats.spd  * (1.08 / 1.06));
+    m.stats.crit = (m.stats.crit||0) + 1;
+    if(m.maxHp){
+      const ratio = m.hp / Math.max(1, oldHp);
+      m.maxHp = m.stats.hp;
+      m.hp = Math.round(m.maxHp * Math.max(0, Math.min(1, ratio)));
+    }
+    migrated++;
+  });
+  s._godStatsV68Applied = true;
+  if(migrated > 0){
+    console.log(`V68 migration: General GOD stats further boosted on ${migrated} monsters`);
   }
 }
 
