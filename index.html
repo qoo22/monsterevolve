@@ -5698,7 +5698,53 @@ function _hydrateStateAfterLoad(s){
       }
     });
   }
+  // V66: 既存GODに新ボーナス遡及適用 (1回だけ実行)
+  _migrateGodStatsV66(s);
   return s;
+}
+
+// V66: 既存GODモンスターに新ボーナス分のステを追加 (旧データの遡及強化)
+//   旧仕様: 竜系GODのみ +12%/+10%/+5。一般GODは無補正。
+//   新仕様: 一般GODも +8%/+6%/+3、Genesis/Cosmicは竜並み +12%/+10%/+5。
+//   差分(=新-旧)だけ乗算する: 進化済個体の compound チェーンも自然に強化される。
+function _migrateGodStatsV66(s){
+  if(!s || !s.monsters || s._godStatsV66Applied) return;
+  let migrated = 0;
+  s.monsters.forEach(m => {
+    if(!m.god || !m.stats) return;
+    const sp = SPECIES.find(x => x.id === m.spId);
+    if(!sp) return;
+    const isDragon = _isDragonSpecies(sp);
+    const isException = _GOD_EXCEPTION_IDS.has(sp.id);
+    let dAtk=1, dDef=1, dHp=1, dSpd=1, dCrit=0;
+    if(isDragon){
+      // 旧でも+12%貰っていたので変化なし
+      return;
+    } else if(isException){
+      // 旧 0 → 新 +12%/+10%/+5
+      dAtk = 1.12; dDef = 1.12; dHp = 1.12; dSpd = 1.10; dCrit = 5;
+    } else {
+      // 一般GOD: 旧 0 → 新 +8%/+6%/+3
+      dAtk = 1.08; dDef = 1.08; dHp = 1.08; dSpd = 1.06; dCrit = 3;
+    }
+    const oldHp = m.stats.hp;
+    m.stats.atk  = Math.round(m.stats.atk  * dAtk);
+    m.stats.def  = Math.round(m.stats.def  * dDef);
+    m.stats.hp   = Math.round(m.stats.hp   * dHp);
+    m.stats.spd  = Math.round(m.stats.spd  * dSpd);
+    m.stats.crit = (m.stats.crit||0) + dCrit;
+    // 現在HPもmaxHpも追従 (戦闘中じゃないなら maxHp ≒ hp)
+    if(m.maxHp){
+      const ratio = m.hp / Math.max(1, oldHp);
+      m.maxHp = m.stats.hp;
+      m.hp = Math.round(m.maxHp * Math.max(0, Math.min(1, ratio)));
+    }
+    migrated++;
+  });
+  s._godStatsV66Applied = true;
+  if(migrated > 0){
+    console.log(`V66 migration: GOD stats boosted on ${migrated} monsters`);
+  }
 }
 
 function _openIDB(){
@@ -7065,6 +7111,19 @@ function _isDragonSpecies(sp){
   return false;
 }
 
+// V66: GOD種別ボーナス取得 (3段階)
+//   竜系GOD:                +12%/+12%/+12%/+10% +5crit (従来通り最強)
+//   創造神 (genesis_prime / cosmic_architect): 竜と同等
+//   一般GOD (アマテラス/ハーデス等): +8%/+8%/+8%/+6% +3crit (竜より少し弱いが大幅底上げ)
+const _GOD_EXCEPTION_IDS = new Set(['genesis_prime', 'cosmic_architect']);
+function _getGodStatBonus(sp){
+  if(!sp) return null;
+  if(_isDragonSpecies(sp) || _GOD_EXCEPTION_IDS.has(sp.id)){
+    return {atk:1.12, def:1.12, hp:1.12, spd:1.10, crit:5};
+  }
+  return {atk:1.08, def:1.08, hp:1.08, spd:1.06, crit:3};
+}
+
 function _buildMonster(sp, ovr, r){
   const god = !!sp.god;
   const mythic = !!sp.mythic || ovr === 136 || god;
@@ -7072,13 +7131,14 @@ function _buildMonster(sp, ovr, r){
   if(god) ovr = sp.base;
   if(god) r = 'GOD';
   let stats = genStats(ovr, r, mythic, god);
-  // V15: 龍系GODは初期ステ全体を 12% 強化 (atk/def/hp/spd/crit)
-  if(god && _isDragonSpecies(sp)){
-    stats.atk  = Math.round(stats.atk  * 1.12);
-    stats.def  = Math.round(stats.def  * 1.12);
-    stats.hp   = Math.round(stats.hp   * 1.12);
-    stats.spd  = Math.round(stats.spd  * 1.10);
-    stats.crit = Math.round(stats.crit + 5);
+  // V66: GOD全員に種別ボーナス (竜=最強、Genesis/Cosmic=竜並み、その他=底上げ)
+  if(god){
+    const bonus = _getGodStatBonus(sp);
+    stats.atk  = Math.round(stats.atk  * bonus.atk);
+    stats.def  = Math.round(stats.def  * bonus.def);
+    stats.hp   = Math.round(stats.hp   * bonus.hp);
+    stats.spd  = Math.round(stats.spd  * bonus.spd);
+    stats.crit = Math.round(stats.crit + bonus.crit);
   }
   return {
     uid: uid(),
@@ -9387,8 +9447,8 @@ function _sortByStatTotal(arr){
 function openTeamPicker(onConfirm){
   const pool = _sortByStatTotal(state.monsters.filter(m=>!m.listed));
   if(pool.length === 0){ toast('モンスターがいません','error'); return; }
-  // Default: top 5 by stat total
-  _teamPickerSelection = pool.slice(0, Math.min(5, pool.length)).map(m=>m.uid);
+  // V65: Default: top 6 by stat total (5→6)
+  _teamPickerSelection = pool.slice(0, Math.min(6, pool.length)).map(m=>m.uid);
   _teamPickerOnConfirm = onConfirm;
   _teamPickerPage = 0;  // V39: 開く時はページ0に
   renderTeamPicker();
@@ -9520,19 +9580,22 @@ function buildPlayerTeam(size, customTeamUids){
 function getBossBuffs(di){
   // di: 0-based normal dungeons, -1 for limited (treat as D5 tier ~ moderate)
   const depth = di < 0 ? 4 : di;
-  // 序盤(D1)から既存の倍率にプラスして全体を底上げ
-  let hpMult = Math.min(14.0, 2.4 + depth * 0.8);      // D1=3.2, D5=6.4, D10=10.4, D20+=14.0
-  let atkMult = Math.min(3.2, 1.6 + depth * 0.10);     // D1=1.70, D5=2.10, D10=2.60, D20+=3.20
-  let defMult = Math.min(3.5, 1.55 + depth * 0.12);    // D1=1.67, D5=2.15, D10=2.75, D20+=3.50
-  let critBonus = Math.min(45, 8 + depth * 2.5);       // D1=+10.5, D5=+20.5, D10=+33, D20+=+45
-  // === V15: 後半(D17以降, 全33中の半分以降) はさらに段階的強化 ===
+  // V67: プレイヤーGOD強化(+8〜12%)とチーム5→6に対応してボス全体底上げ
+  //   - HP 主体に+25〜30%増 (戦闘長続き化)
+  //   - ATK +15% (脅威度UP)
+  //   - DEF +15% (耐久性UP)
+  let hpMult  = Math.min(18.0, 3.0 + depth * 0.95);    // D1=3.95, D5=7.75, D10=12.5, D20+=18.0
+  let atkMult = Math.min(3.8,  1.85 + depth * 0.12);   // D1=1.97, D5=2.45, D10=3.05, D20+=3.80
+  let defMult = Math.min(4.2,  1.80 + depth * 0.14);   // D1=1.94, D5=2.50, D10=3.20, D20+=4.20
+  let critBonus = Math.min(55, 10 + depth * 3.0);      // D1=13, D5=25, D10=40, D20+=55
+  // === V15+V67: 後半(D17以降, 全33中の半分以降) はさらに段階的強化 ===
   if(depth >= 16){  // di=16 → D17
     const extra = (depth - 15);  // D17=1, D33=17
-    const lateMult = 1 + extra * 0.10;   // D17=+10%, D25=+90%, D33=+170%
+    const lateMult = 1 + extra * 0.13;   // D17=+13%, D25=+117%, D33=+221% (旧+10%→+13%)
     hpMult  *= lateMult;
-    atkMult *= 1 + extra * 0.05;          // D17=+5%, D33=+85%
-    defMult *= 1 + extra * 0.04;          // D17=+4%, D33=+68%
-    critBonus += extra * 2;               // D17=+2, D33=+34
+    atkMult *= 1 + extra * 0.07;          // D17=+7%, D33=+119% (旧+5%→+7%)
+    defMult *= 1 + extra * 0.05;          // D17=+5%, D33=+85% (旧+4%→+5%)
+    critBonus += extra * 3;               // D17=+3, D33=+51 (旧+2→+3)
   }
   return { hp: hpMult, atk: atkMult, def: defMult, crit: critBonus };
 }
@@ -13391,13 +13454,14 @@ function decodeTeamCode(code){
       const realRarity = isGod ? 'GOD' : rarityFromOvr(o);
       // base ovr (species定義) からスタート
       let baseStats = genStats(sp.base, realRarity, isMythic, isGod);
-      // 竜系GODはATK/DEF/HP +12%, SPD +10%, CRT +5 (_buildMonsterと同等)
-      if(isGod && _isDragonSpecies(sp)){
-        baseStats.atk  = Math.round(baseStats.atk  * 1.12);
-        baseStats.def  = Math.round(baseStats.def  * 1.12);
-        baseStats.hp   = Math.round(baseStats.hp   * 1.12);
-        baseStats.spd  = Math.round(baseStats.spd  * 1.10);
-        baseStats.crit = Math.round(baseStats.crit + 5);
+      // V66: GOD種別ボーナス (_buildMonsterと完全同等)
+      if(isGod){
+        const bonus = _getGodStatBonus(sp);
+        baseStats.atk  = Math.round(baseStats.atk  * bonus.atk);
+        baseStats.def  = Math.round(baseStats.def  * bonus.def);
+        baseStats.hp   = Math.round(baseStats.hp   * bonus.hp);
+        baseStats.spd  = Math.round(baseStats.spd  * bonus.spd);
+        baseStats.crit = Math.round(baseStats.crit + bonus.crit);
       }
       // V63: 進化補正を _doExecuteEvolve と完全に同じ乗算複利で復元
       //  各レベル毎: atk×(1+0.12+lvl×0.015+rb), def×(1+0.10+lvl×0.012+rb×0.8) ...
