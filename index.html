@@ -7111,17 +7111,18 @@ function _isDragonSpecies(sp){
   return false;
 }
 
-// V66: GOD種別ボーナス取得 (3段階)
+// V66+V68: GOD種別ボーナス取得 (3段階)
 //   竜系GOD:                +12%/+12%/+12%/+10% +5crit (従来通り最強)
 //   創造神 (genesis_prime / cosmic_architect): 竜と同等
-//   一般GOD (アマテラス/ハーデス等): +8%/+8%/+8%/+6% +3crit (竜より少し弱いが大幅底上げ)
+//   一般GOD (アマテラス/ハーデス等): V68で+8→+10%/+6→+8%/+3→+4 に増強
+//      (依然ドラゴン未満だが差を縮めた)
 const _GOD_EXCEPTION_IDS = new Set(['genesis_prime', 'cosmic_architect']);
 function _getGodStatBonus(sp){
   if(!sp) return null;
   if(_isDragonSpecies(sp) || _GOD_EXCEPTION_IDS.has(sp.id)){
     return {atk:1.12, def:1.12, hp:1.12, spd:1.10, crit:5};
   }
-  return {atk:1.08, def:1.08, hp:1.08, spd:1.06, crit:3};
+  return {atk:1.10, def:1.10, hp:1.10, spd:1.08, crit:4};  // V68: 8→10%, 6→8%, 3→4
 }
 
 function _buildMonster(sp, ovr, r){
