@@ -4008,6 +4008,113 @@ function chord(notes, dur=0.3, type='sine', vol=0.1){
 // V59: GOD排出専用「脳汁ジャックポット音」
 // SSR確定演出・パチンコ大当たり風の5秒派手電子音ジングル
 // 構成: 低音ドゥン → 上昇riser → ピロピロ8bit → ベル乱舞 → キュイーン → シャキーン → 大ファンファーレ
+// V74: DQ風進化成功ファンファーレ
+//   有名な「♪パッパッパッパー、パパパッパー、パッパー、パッパー、パッパッパッパー♪」
+//   構成: 金管(square+sawtooth)+ティンパニドラム+ベース+伸びる音
+//   約4秒の本格演奏
+function _evoFanfareDQ(){
+  if(!soundEnabled) return;
+  const ac = ensureAudio(); if(!ac) return;
+  const t0 = ac.currentTime;
+  // 金管楽器風トーン (square + sawtooth 重ねで明るく)
+  const brass = (freq, when, dur, vol=0.18) => {
+    const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+    o1.type='square'; o1.frequency.value = freq;
+    o2.type='sawtooth'; o2.frequency.value = freq * 1.005;  // detune for chorus
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(vol, when + 0.02);
+    g.gain.linearRampToValueAtTime(vol * 0.75, when + dur * 0.3);
+    g.gain.exponentialRampToValueAtTime(0.001, when + dur);
+    o1.connect(g); o2.connect(g); g.connect(ac.destination);
+    o1.start(when); o1.stop(when + dur + 0.05);
+    o2.start(when); o2.stop(when + dur + 0.05);
+  };
+  // ベース (低音 sawtooth)
+  const bass = (freq, when, dur, vol=0.14) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type='sawtooth'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(vol, when + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, when + dur);
+    o.connect(g); g.connect(ac.destination);
+    o.start(when); o.stop(when + dur + 0.02);
+  };
+  // ドラム (ティンパニ風 - 低音バチン)
+  const drum = (when, vol=0.20) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(180, when);
+    o.frequency.exponentialRampToValueAtTime(50, when + 0.18);
+    g.gain.setValueAtTime(vol, when);
+    g.gain.exponentialRampToValueAtTime(0.001, when + 0.22);
+    o.connect(g); g.connect(ac.destination);
+    o.start(when); o.stop(when + 0.25);
+  };
+  // シンバル (クラッシュ - ハイノイズ)
+  const cymbal = (when, vol=0.12, dur=0.3) => {
+    const buf = ac.createBuffer(1, Math.max(1, ac.sampleRate*dur), ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const filt = ac.createBiquadFilter(); filt.type='highpass'; filt.frequency.value=4000;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(vol, when);
+    g.gain.exponentialRampToValueAtTime(0.001, when + dur);
+    src.connect(filt); filt.connect(g); g.connect(ac.destination);
+    src.start(when); src.stop(when + dur);
+  };
+
+  // === DQ風ファンファーレメロディ ===
+  // C major: C=523, D=587, E=659, F=698, G=784, A=880, B=988, C5=1047, D5=1175, E5=1319
+  // 「♪パッパパッパー♪」リズム (15度) + 終わりに上昇 + 主和音
+  const N = 0.13;  // 8分音符基準
+  // 第1フレーズ: G-G-G-C (タッタッタッター)
+  brass(784, t0 + 0*N, N*0.9, 0.22);     // G
+  brass(784, t0 + 1*N, N*0.9, 0.22);     // G
+  brass(784, t0 + 2*N, N*0.9, 0.22);     // G
+  brass(1047, t0 + 3*N, N*3.5, 0.25);    // C (long)
+  drum(t0 + 0*N, 0.20);
+  drum(t0 + 3*N, 0.18);
+  cymbal(t0 + 3*N, 0.10, 0.35);
+
+  // 第2フレーズ: E-E-E-G-C-C-G (上昇)
+  brass(659, t0 + 7*N, N*0.9, 0.22);     // E
+  brass(659, t0 + 8*N, N*0.9, 0.22);     // E
+  brass(659, t0 + 9*N, N*0.9, 0.22);     // E
+  brass(784, t0 + 10*N, N*1.8, 0.22);    // G (long)
+  brass(1047, t0 + 12*N, N*1.8, 0.24);   // C5
+  drum(t0 + 7*N, 0.15);
+
+  // 第3フレーズ: E-G-C-E-G-C5-E5 (上昇のクライマックス)
+  brass(659, t0 + 15*N, N*0.7, 0.22);    // E
+  brass(784, t0 + 16*N, N*0.7, 0.22);    // G
+  brass(1047, t0 + 17*N, N*0.7, 0.24);   // C5
+  brass(1319, t0 + 18*N, N*0.7, 0.24);   // E5
+  brass(1568, t0 + 19*N, N*1.0, 0.26);   // G5
+  brass(2093, t0 + 20*N, N*3.5, 0.28);   // C6 — 頂点!
+  brass(1319, t0 + 20*N, N*3.5, 0.18);   // E5 (ハーモニー)
+  brass(1568, t0 + 20*N, N*3.5, 0.18);   // G5 (ハーモニー)
+  drum(t0 + 20*N, 0.25);
+  cymbal(t0 + 20*N, 0.15, 0.6);
+
+  // ベースライン (1オクターブ下)
+  bass(131, t0 + 0*N, N*4, 0.13);        // C
+  bass(196, t0 + 3*N, N*4, 0.13);        // G
+  bass(131, t0 + 7*N, N*4, 0.13);        // C
+  bass(220, t0 + 12*N, N*3, 0.13);       // A
+  bass(262, t0 + 15*N, N*5, 0.15);       // C
+  bass(131, t0 + 20*N, N*4, 0.18);       // C (final low)
+
+  // フィナーレ和音 (3度の余韻)
+  setTimeout(() => {
+    const t1 = ac.currentTime + 0.05;
+    brass(523, t1, 1.2, 0.20);  // C
+    brass(659, t1, 1.2, 0.16);  // E
+    brass(784, t1, 1.2, 0.16);  // G
+    brass(1047, t1, 1.2, 0.14); // C5
+    cymbal(t1, 0.10, 1.0);
+  }, 3500);
+}
+
 function _godJackpotSFX(){
   if(!soundEnabled) return;
   const ac = ensureAudio(); if(!ac) return;
@@ -4241,10 +4348,8 @@ const SFX = {
   // 進化
   evoStart:   ()=> { if(!_playSound('gacha',{vol:0.55,rate:1.15})) { noise(0.2,0.1,500); tone(110,0.5,'sawtooth',0.1,880); } },
   evoSuccess: ()=> {
-    if(!_playSound('level_up',{vol:0.7})) {
-      chord([523,659,784,1047,1319],0.6,'sine',0.12);
-      setTimeout(()=>chord([1047,1319,1568,2093],0.8,'triangle',0.1),250);
-    }
+    // V74: DQ風ファンファーレ (procedural、約4秒の本格演奏)
+    _evoFanfareDQ();
   },
   evoFail:    ()=> {
     tone(440,0.2,'sawtooth',0.1,220);
@@ -10789,7 +10894,76 @@ const SECOND_FORM_QUOTES = {
   kali_destroyer: ['破壊の極致! 千の腕で踊らせよ!'],
   infernox_omega: ['業火、全開! 地獄を見せてやる!'],
   omega_tiamat: ['…この世界は終わる。私と共に終焉せよ','十二の頭、解放完了。創世の墓所が開く…','貴様らごときに本気を出すとはな…後悔するがよい'],
-  // V73 D35-D50 megaボス覚醒セリフ
+};
+// V74: UNDERTALE風 - 攻撃の合間にプレイヤーへ語りかける banter
+//   ボスの個性が出る対話、長め・思慮深め
+const BOSS_BANTERS = {
+  amaterasu:        ['人間よ…なぜ闇に身を寄せるのか?','太陽は誰にも平等に輝く。汝もまた、光の中に居るのだ','戦う前に、考えてみるがよい。本当に必要な争いか?','朕は争いを好まぬ。だが汝が望むなら、相手をしよう','汝の魂…陰っているな。光を取り戻すには、何が必要だ?'],
+  zeus_thunder:     ['ハハハ! 面白い! 久しぶりに楽しい戦いだ!','人間ごときが! オリュンポスに挑むとはな!','降参するなら、命だけは助けてやろう。どうだ?','貴様らの執念には感心する。だが…結末は変わらぬぞ','もっと雷を浴びてみよ! それが望みなのだろう?'],
+  poseidon_tide:    ['海は…広い。汝はその浅瀬しか知らぬのだろう','深海の奥には、汝が想像もできぬ世界がある','三叉戟は…ただの道具ではない。海そのものなのだ','潮の音を聞け…それが私の鼓動だ'],
+  hades_underworld: ['なぜ死を恐れる? 終わりは新たな始まりだ','冥府は…悪所ではない。安らぎの場所だ','汝の魂…まだ未練があるな。それは何だ?','死者は皆、私の元へ来る。汝もいずれ…','戦いに意味はあるか? 結局は皆、私の元へ帰る'],
+  apollo_sun:       ['予言は告げている…汝の運命を','太陽は美しい。だが、それを見るには勇気が要る','私の弓矢は外れぬ。だが…汝の心は、私の的ではない','音楽と弓、二つを操る神…暇つぶしには丁度よい'],
+  athena_wisdom:    ['戦術は完璧だ。だが…汝には予測不能な何かがある','知恵とは、戦わぬことを選ぶ勇気でもある','アイギスの盾は、私を守らぬ。心を守るのだ','戦況分析中…汝の意図が読めぬ。面白い'],
+  odin_allfather:   ['ヴァルハラへの道は、勇者にのみ開かれる','片目を捧げ、私は全てを知った。だが…汝の心だけは見えぬ','九つの世界を見渡す者にも、人間の魂は謎だ','ラグナロクは…来る。だが、それは終わりではない'],
+  freyja:           ['黄金の涙を流す者は…私だけではないようだな','戦いの中で、汝は何を求めている?','美と戦の女神…矛盾しているように見えるか?','フォルクヴァングは半分だけ。残り半分はヴァルハラに'],
+  thor_thunder:     ['ハッハッハ! いい根性してるな!','ミョルニルを止められる者はいない! 試してみるか?','戦いは楽しい! 汝もそう思うだろう?','降参しても恨まんぞ。賢明な判断だ'],
+  ryujin_dragon:    ['龍宮の主の前で、なぜ怯えぬ?','潮満玉と潮干玉…どちらを使うか迷うな','深海の冷気…汝には堪えるはずだが'],
+  bahamut_prime:    ['全竜の頂点に立つ者として、認めよう。汝は強い','メガフレアは…一発で全てを終わらせる。準備はよいか?','古竜の眼で見ても、汝の魂は珍しい','戦いの果てに、何を求めている?'],
+  tiamat_chaos:     ['五頭、それぞれが意志を持つ。誰と話したい?','原初の混沌…汝はそれを理解できるか?','私の子らよ、私を倒せば次は汝が母となる','混沌は美しい。秩序は退屈だ'],
+  quetzalcoatl_serpent:['風蛇神は飛び続ける。汝は走り続けられるか?','黒曜石の鏡に映る汝…意外と美しい','古マヤの呪いは、まだ生きている'],
+  genesis_prime:    ['ふむ…私の創造物が私を超える日が来るとはな','面白い…貴様らも創世の一部か','私は始まりにして終わり。だが…汝は何だ?','想定外の変数…これも創造の妙か','汝らに「自由意志」を与えたのは、間違いだったか…いや、正しかった'],
+  cosmic_architect: ['宇宙の設計書には、貴様らの存在も記されている','量子崩壊…避ける確率は0.0001%。試してみるか?','私の青写真には、エラーが無い。だが…汝はそのエラーかもしれぬ','次元を超えて来る者など、稀だ。汝、面白い'],
+  infernox_omega:   ['業火は…焼き尽くす。だが、汝の魂は…燃えぬか?','地獄の炎は、私の友だ。汝にも紹介しよう','まだ熱が足りぬか? もっと出してやろう'],
+  void_emperor:    ['虚無は…全てを呑む。だが、汝の存在は、奇妙にも残る','光なき世界で、なぜ汝は光を求める?','存在とは何か…汝に問いたい','闇の中で、汝の声だけが響く…奇妙だ'],
+  kali_destroyer:  ['破壊なくして創造なし。それを理解せよ','私の十本の腕…全て汝に届けよう','髑髏の首飾りに、汝の頭骨を加えてやろうか?','破壊の踊りは…止まらぬ'],
+  aphrodite:       ['美しいものは…儚い。汝はそれを知っているか?','戦いと愛、私はどちらも司る…どちらが好きだ?','その瞳…私を惹きつける。残念だ'],
+  isis_queen:      ['千の名を持つ者として、汝の名を覚えよう','ホルスの目で見ても、汝は不思議な存在だ','蘇生と死を司る者として、汝の運命を見据えている'],
+  // メガボス (D34-D50)
+  omega_tiamat:     ['世界の終端は、すでに始まっている…','十二の頭で考えた…貴様らは何故ここまで来た?','終焉を恐れぬ者よ…称号を与えよう','創世は終わらねばならぬ…これが宿命だ'],
+  chaos_origin:     ['始源より蘇った私…貴様らは私の子か?','混沌は美しい。秩序は刑罰だ','胎動が止まらぬ…新たな世界を作るか?','私は始まりであり、終わりでもある'],
+  apocalypse_angel: ['七つの封印は開かれた。後戻りは無い','喇叭の音が聞こえぬか? 終わりの音だ','私は天の意思。抗っても無駄だ','汝らは私の使徒となれ。それが救済だ'],
+  void_king_omega:  ['虚無の玉座から、貴様らを見下ろしている','存在は無価値。無の中にこそ真理がある','王座は…誰にも譲らぬ','貴様らの魂もすぐに虚無へ消える'],
+  thanatos_prime:   ['死は…平等だ。貴様らも例外ではない','鎌は…既に振り下ろされている','魂の重さを計らせてもらおう','死神の前で、なぜ笑える?'],
+  dark_dragoon:     ['闇竜帝の前で…なぜ立ち上がれる?','貴様らの鎧は紙のようだ','黒鱗の真の力…見たいか?','戦いに意味はあるか? 結局、闇は勝つ'],
+  ouroboros_god:    ['始まりも終わりも、一つの輪…','私を倒しても、私はまた現れる。無限だ','尾を食む者…それが宇宙の真理','貴様らもいずれ輪に入る'],
+  galaxias_emperor: ['銀河を統べる者として、汝らに問う…なぜ戦う?','星々は私の支配下にある。地球はその一つに過ぎぬ','宇宙の覇権は…私のもの','汝らの存在は、銀河の中の塵だ'],
+  chronos_infinity: ['時を止めれば、汝らは動けぬ','過去も未来も、私の手中にある','時計の歯車に、貴様らの運命が刻まれている','時間は…平等だ。だが、私は例外だ'],
+  axion_finale:     ['…これが真の終焉。汝、ここまで来たか','全ての神、全ての存在…私が呑み込む','貴様らの「存在」も、私の前では意味を失う','面白い。久しぶりに「終わり」を遅らせた者がいる','私を倒しても、終焉は来る。それが宇宙の理だ'],
+};
+// 汎用 banter (個別未定義時の fallback)
+const BOSS_BANTERS_GENERIC = ['…貴様らも諦めぬか','久しぶりにいい戦いをしている気分だ','汝の魂…面白い','まだ続けるのか? なぜだ?','降参すれば命だけは助けてやろう','一つだけ聞かせてくれ…なぜ戦う?'];
+
+// V74: 通常bossSpeechの上位互換 — 'banter' タイプで呼ぶと長めセリフ
+function _maybeBossBanter(boss){
+  if(!boss || !boss.alive) return false;
+  if(!battleState || !battleState.boss) return false;
+  // 25%で発動
+  if(Math.random() > 0.25) return false;
+  // クールダウン: 10秒以内に喋った直後ならスキップ
+  const now = Date.now();
+  if(now < (_bossSpeechCooldown||0) + 5000) return false;
+  const ov = document.getElementById('battle-overlay');
+  if(!ov) return false;
+  const old = ov.querySelector('.boss-speech');
+  if(old) old.remove();
+  const personal = BOSS_BANTERS[boss.spId];
+  const text = personal && personal.length ? pick(personal) : pick(BOSS_BANTERS_GENERIC);
+  const tier = boss.god ? 'GOD' : (boss.mythic ? 'MYTHIC' : '');
+  const bubble = document.createElement('div');
+  bubble.className = 'boss-speech tier-' + tier;
+  bubble.innerHTML = `
+    <div class="boss-speech-name">${boss.name}</div>
+    <div class="boss-speech-text">「${text}」</div>
+    <div class="boss-speech-prompt">▼</div>
+  `;
+  ov.appendChild(bubble);
+  _bossSpeechCooldown = now + 4500;
+  setTimeout(()=>{ if(bubble.parentNode) bubble.remove(); }, 4200);
+  return true;
+}
+
+// V74修正: D35-D50覚醒セリフを SECOND_FORM_QUOTES にマージ
+Object.assign(SECOND_FORM_QUOTES, {
   chaos_origin:        ['始源より蘇る…混沌の真の姿を見よ!','胎動が止まらぬ…世界よ、再構成されろ!'],
   apocalypse_angel:    ['七つの封印、開いた…最終審判の刻だ!','喇叭が響く…全ての終わりが来る!'],
   void_king_omega:     ['虚無の門、全開!存在ごと飲み込んでやる!','王座より立ち上がる時が来た…'],
@@ -10806,7 +10980,7 @@ const SECOND_FORM_QUOTES = {
   terra_titan:         ['大地よ、震えよ!タイタンの真の力!','山岳を砕く一撃を見せてやろう!'],
   storm_emperor:       ['嵐よ、荒れ狂え!風の覇王、覚醒!','颶風の真の威力を浴びよ!'],
   axion_finale:        ['…これが終わりだ。すべての存在は無に還る','私はアクシオン…始まりにして終わり。貴様らの存在は…消える','面白い。ここまで来たか…だが、ここが真の終焉だ'],
-};
+});
 function _maybeTriggerSecondForm(boss){
   if(!boss || !boss.alive || !boss.maxHp) return;
   if(boss._formChanged) return;        // 1回だけ
@@ -10920,6 +11094,10 @@ function _executeAttackImpact(attacker, target, action, isPlayer, oppActives, ta
       _maybeInflictStatusOnHit(attacker, target);
       // V72: ボス第二形態トリガー
       _maybeTriggerSecondForm(target);
+    }
+    // V74: ボスが攻撃した後、低確率でUNDERTALE風の語りかけ
+    if(!isPlayer && battleState.boss && attacker.alive){
+      setTimeout(() => _maybeBossBanter(attacker), 1200);
     }
   } else {
     const tSlot = oppActives.indexOf(targetIdx);
