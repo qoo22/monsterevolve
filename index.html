@@ -1369,17 +1369,15 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
    - 1 drop-shadow filter
    ::before や追加アニメは無し */
 .orb.tier-GOD{
-  /* V60: LRと完全に同じGPU負荷プロファイルに揃える
-     — サイズ 300→220 (LR一致)
-     — box-shadow 5層520px → 3層320px (LR一致)
-     — drop-shadow 24→20px (LR一致)
-     色のみGOD固有: 白/金/ライム緑 (LRと差別化) */
+  /* V73: LR(球の膨らみ最高)と完全同じプロファイル — 色だけGOD固有
+     LR: 白/金/桃 → GOD: 白/金/ライム緑 (差別化)
+     animation/サイズ/drop-shadow/blurは全てLRと一致 */
   background:url(images/god_orb_v46.png) center/contain no-repeat transparent;
   animation:orbPulse 0.3s alternate infinite, orbRotate 2s linear infinite;
   box-shadow:0 0 120px #fff,
              0 0 240px #ffd700,
              0 0 320px #4cff7a;
-  filter:drop-shadow(0 0 20px #ffd700);
+  filter:drop-shadow(0 0 20px #fff);  /* V73: LRと同じ白drop-shadow (より神々しい) */
   width:220px;height:220px;
   border:none;
   border-radius:50%;
@@ -1389,41 +1387,28 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
   -webkit-transform-style:flat;
 }
 .beam.tier-GOD{
-  opacity:0.95;animation-duration:1.5s;
-  /* V34: カラー数 7→3 — gold + deep amethyst + ivory のみ */
-  background:conic-gradient(from 0deg,
-    transparent,#fff8e0 6deg,transparent 20deg,
-    #ffd700 32deg,transparent 46deg,
-    #5b2db8 58deg,transparent 72deg,
-    #ffd700 84deg,transparent 98deg,
-    #fff8e0 110deg,transparent 124deg);
-  filter:blur(2px) saturate(1.1);
+  /* V73: LR(opacity:0.8 / 3s)と同等 — GODらしさは色相シフトだけで表現 */
+  opacity:0.85;
+  animation-duration:2.5s;
+  filter:saturate(1.3) hue-rotate(20deg);
 }
 .gacha-stage.bg-GOD{
-  /* V34: 高速点滅(0.4s) → 静かな2.5sパルスに */
-  background:radial-gradient(ellipse at center,#fff8e0 0%,#1a0f3a 60%,#000 100%);
-  animation:bgPulseGod 2.5s ease-in-out infinite;
-}
-@keyframes bgPulseGod{
-  0%,100%{background:radial-gradient(ellipse at center,#fff8e0 0%,#1a0f3a 60%,#000 100%);}
-  50%{background:radial-gradient(ellipse at center,#ffd700 0%,#5b2db8 55%,#000 100%);}
+  /* V73: LRと同じ bgPulseRainbow を採用 (LR系統に統一)
+     base色を 紫→金混合 にして GOD感を維持しつつ虹色サイクル */
+  background:radial-gradient(ellipse at center,#7a4a00 0%,#3a0a5a 50%,#000 100%);
+  animation:bgPulseRainbow 0.9s infinite;
 }
 .flash.bang-god{
-  /* V49: 「眩しすぎる」対策 — 明るい白を排除 → 落ち着いた金〜紫グラデ */
-  animation:bangGod 1.4s ease-out forwards;
-  /* 中心の白(#fff8e0)を撤去、彩度を落とした金から紫黒へ */
-  background:radial-gradient(circle,
-    rgba(255,220,140,0.6) 0%,
-    rgba(255,180,80,0.45) 25%,
-    rgba(91,45,184,0.35) 60%,
-    rgba(0,0,0,0.6) 100%);
+  /* V73: LRのbang-rainbowと同等の linear-gradient 45° 構成
+     ただし白っぽさを抑えた金主体パレット + 動きは多少穏やか */
+  animation:bangGodRainbow 1.0s forwards;
+  background:linear-gradient(45deg, #ffd700, #fff8d0, #4cff7a, #00d4ff, #ff6bff, #ffd700);
+  background-size:300% 300%;
 }
-@keyframes bangGod{
-  /* opacity 0.7 → 0.3 までさらに半減、scale も控えめに */
-  0%   {opacity:0;    transform:scale(1);    filter:brightness(0.95);}
-  20%  {opacity:0.3;  transform:scale(1.3);  filter:brightness(0.95);}
-  60%  {opacity:0.18; transform:scale(2);    filter:brightness(0.9);}
-  100% {opacity:0;    transform:scale(2.6);  filter:brightness(0.8);}
+@keyframes bangGodRainbow{
+  0%   {opacity:0.6; background-position:0% 0%;}
+  30%  {opacity:0.45;}
+  100% {opacity:0;   background-position:300% 300%;}
 }
 @keyframes orbRotate{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 @keyframes orbRainbow{0%{background-position:0% 50%;}100%{background-position:200% 50%;}}
@@ -1544,27 +1529,22 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
     conic-gradient(from 0deg,#ff00ff44,#ffd70044,#00d4ff44,#ffffff66,#ff00ff44,#ffd70044);
   animation-duration:2.5s;
 }
-/* V49: GOD のスポットライトは白の発光を抑制 (チカチカ防止) */
+/* V73: GOD spotlight を LR (tier-LR/tier-MYTHIC) と同じ大型化 + spin */
 .reveal-spotlight.tier-GOD{
-  width:760px;height:760px;opacity:0.55;animation-duration:5s;
+  width:800px;height:800px;opacity:1;animation-duration:4s;
   background:
-    radial-gradient(circle at center,rgba(255,215,0,0.25),transparent 35%),
+    radial-gradient(circle at center,rgba(255,255,255,0.35),transparent 30%),
     conic-gradient(from 0deg,
-      rgba(255,215,0,0.35),
-      rgba(255,107,255,0.3),
-      rgba(76,255,122,0.25),
-      rgba(0,212,255,0.3),
-      rgba(255,215,0,0.35));
-  mix-blend-mode:screen;
-  filter:blur(2px);
+      rgba(255,215,0,0.5),
+      rgba(76,255,122,0.4),
+      rgba(255,255,255,0.55),
+      rgba(255,107,255,0.4),
+      rgba(255,215,0,0.5));
 }
-/* V49: GOD のカードハロー — MYTHICの白点滅を排除 */
+/* V73: GOD card halo を LR と同じ spinning conic に (色は白/金/ライム/桃) */
 .card-halo.tier-GOD{
-  background:radial-gradient(ellipse,
-    rgba(255,215,0,0.55),
-    rgba(255,107,255,0.3) 50%,
-    transparent 75%);
-  opacity:0.55;
+  background:conic-gradient(from 0deg,#fff,#ffd700,#4cff7a,#fff,#ff6bff,#fff);
+  animation:spotlightSpin 4s linear infinite;
   width:380px;height:520px;
 }
 @keyframes spotlightSpin{0%{transform:translate(-50%,-50%) rotate(0deg);}100%{transform:translate(-50%,-50%) rotate(360deg);}}
@@ -2797,6 +2777,43 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 .active-fighter.is-enemy .af-portrait img{transform:scaleX(-1);}
 .active-fighter.boss{max-width:200px;}
 .active-fighter.boss .af-portrait{width:160px;height:160px;border-color:#ff1e5a;box-shadow:0 0 20px #ff1e5a,0 0 40px rgba(255,30,90,0.5);}
+/* V72: ボス第二形態の見た目 — 赤色染め + 巨大化 + 暗いオーラ */
+.active-fighter.boss.second-form .af-portrait{
+  width:190px;height:190px;
+  border-color:#ff0040;
+  border-width:4px;
+  box-shadow:0 0 30px #ff0040, 0 0 60px rgba(255,0,64,0.8), 0 0 100px rgba(150,0,30,0.5);
+  filter:drop-shadow(0 0 12px #ff0040) saturate(1.4) contrast(1.2);
+  animation:secondFormPulse 0.8s ease-in-out infinite alternate;
+}
+.active-fighter.boss.second-form .af-portrait img{
+  filter:hue-rotate(-20deg) saturate(1.6) brightness(0.9);
+}
+@keyframes secondFormPulse{
+  0%{box-shadow:0 0 30px #ff0040, 0 0 60px rgba(255,0,64,0.6);}
+  100%{box-shadow:0 0 45px #ff0040, 0 0 90px rgba(255,0,64,0.9), 0 0 120px rgba(200,0,40,0.5);}
+}
+/* 第二形態変身演出オーバーレイ */
+.form-change-fx{
+  position:absolute;inset:0;pointer-events:none;z-index:20;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Courier New','MS Gothic',monospace;
+  font-size:32px;font-weight:900;color:#ff0040;
+  text-shadow:0 0 14px #ff0040, 0 0 30px #ff0040, 4px 4px 0 #000;
+  letter-spacing:6px;
+  background:radial-gradient(ellipse at center,rgba(255,0,40,0.3),transparent 70%);
+  animation:formChangeIn 0.5s cubic-bezier(0.34,1.56,0.64,1),
+            formChangeOut 0.4s ease-in 1.8s forwards;
+}
+@keyframes formChangeIn{
+  0%{opacity:0;transform:scale(0.3);}
+  60%{opacity:1;transform:scale(1.15);}
+  100%{opacity:1;transform:scale(1);}
+}
+@keyframes formChangeOut{
+  0%{opacity:1;}
+  100%{opacity:0;transform:scale(1.5);}
+}
 .active-fighter.boss .af-name{font-size:13px;color:#ff5e8a;}
 .active-fighter.attacking-l{animation:atkLeft 0.4s;}
 .active-fighter.attacking-r{animation:atkRight 0.4s;}
@@ -5702,7 +5719,148 @@ function _hydrateStateAfterLoad(s){
   _migrateGodStatsV66(s);
   // V68: V66の+8% を +10%に追加底上げ (1回だけ実行)
   _migrateGodStatsV68(s);
+  // V69: 進化式の世代差による stats 不整合を解消 — 全モンスターを base + 現evo段階で再計算
+  _recomputeAllStatsV69(s);
+  // V70: 竜系GODに×1.2 追加バフ
+  _migrateDragonGodV70(s);
+  // V71: 竜系GOD補正を×1.2→×1.1に調整 (delta = 1.1/1.2 = 0.9167)
+  _migrateDragonGodV71(s);
   return s;
+}
+
+// V70: 竜系GOD だけ追加で×1.2 倍 (Genesis/Cosmic 例外 / 一般GOD は対象外)
+function _migrateDragonGodV70(s){
+  if(!s || !s.monsters || s._dragonGodV70Applied) return;
+  let migrated = 0;
+  s.monsters.forEach(m => {
+    if(!m.god || !m.stats) return;
+    const sp = SPECIES.find(x => x.id === m.spId);
+    if(!sp) return;
+    if(!_isDragonSpecies(sp)) return;  // 竜のみ対象
+    if(_GOD_EXCEPTION_IDS.has(sp.id)) return;  // genesis/cosmic は除外
+    const oldHp = m.stats.hp;
+    m.stats.atk  = Math.round(m.stats.atk  * 1.2);
+    m.stats.def  = Math.round(m.stats.def  * 1.2);
+    m.stats.hp   = Math.round(m.stats.hp   * 1.2);
+    m.stats.spd  = Math.round(m.stats.spd  * 1.2);
+    m.stats.crit = (m.stats.crit||0) + 1;  // bonus上 5→6 になった分
+    if(m.maxHp){
+      const ratio = m.hp / Math.max(1, oldHp);
+      m.maxHp = m.stats.hp;
+      m.hp = Math.round(m.maxHp * Math.max(0, Math.min(1, ratio)));
+    }
+    migrated++;
+  });
+  s._dragonGodV70Applied = true;
+  if(migrated > 0){
+    console.log(`V70 migration: Dragon GOD ×1.2 boost applied on ${migrated} monsters`);
+  }
+}
+
+// V71: 竜系GOD補正を ×1.2 → ×1.1 に調整 (V70の過剰強化を緩和)
+//   既存個体は V70 で ×1.2 状態 → delta = 1.1 / 1.2 ≈ 0.9167 を乗算
+//   crit は V70で+1されていた分(+6になった分)を-1で戻す
+function _migrateDragonGodV71(s){
+  if(!s || !s.monsters || s._dragonGodV71Applied) return;
+  let migrated = 0;
+  const DELTA = 1.1 / 1.2;  // ≈ 0.9167
+  s.monsters.forEach(m => {
+    if(!m.god || !m.stats) return;
+    const sp = SPECIES.find(x => x.id === m.spId);
+    if(!sp) return;
+    if(!_isDragonSpecies(sp)) return;
+    if(_GOD_EXCEPTION_IDS.has(sp.id)) return;
+    const oldHp = m.stats.hp;
+    m.stats.atk  = Math.round(m.stats.atk  * DELTA);
+    m.stats.def  = Math.round(m.stats.def  * DELTA);
+    m.stats.hp   = Math.round(m.stats.hp   * DELTA);
+    m.stats.spd  = Math.round(m.stats.spd  * DELTA);
+    m.stats.crit = Math.max(0, (m.stats.crit||0) - 1);  // V70の+1を戻す
+    if(m.maxHp){
+      const ratio = m.hp / Math.max(1, oldHp);
+      m.maxHp = m.stats.hp;
+      m.hp = Math.round(m.maxHp * Math.max(0, Math.min(1, ratio)));
+    }
+    migrated++;
+  });
+  s._dragonGodV71Applied = true;
+  if(migrated > 0){
+    console.log(`V71 migration: Dragon GOD adjusted ×1.2→×1.1 on ${migrated} monsters`);
+  }
+}
+
+// V69: 全モンスター stats を現行式 (base + GOD bonus + 現 evo 段階の複利) で再計算
+//   背景: 進化式が複数回更新されてきた結果、ロール時期 / 進化時期で stats が大きくずれる現象
+//        (例: バハムートPRIME +7 で ATK 4347 / ヴォイドエンペラー +10 で ATK 1611)
+//   このmigrationで全員を現行式に揃え、evo段階だけが強さを決めるよう正規化する
+//   ※ 個体ばらつきは uid から決定的なシードで再現 (毎load同じ値)
+function _recomputeAllStatsV69(s){
+  if(!s || !s.monsters || s._statsRecomputedV69) return;
+  let recomputed = 0;
+  s.monsters.forEach(m => {
+    if(!m || !m.spId) return;
+    const sp = SPECIES.find(x => x.id === m.spId);
+    if(!sp) return;
+    // 1. genStats base (uid-seeded variation で個性維持)
+    const seed = (typeof m.uid === 'number') ? m.uid : 1;
+    const rand01 = (off) => {
+      const v = ((seed * 2654435761 ^ off * 0x9e3779b9) >>> 0) / 4294967296;
+      return v;
+    };
+    const r = (lo, hi, off) => lo + rand01(off) * (hi - lo);
+    const isGod = !!sp.god;
+    const isMythic = !!sp.mythic || (m.ovr === 136) || isGod;
+    const baseOvr = isGod ? sp.base : (m.ovr || sp.base);
+    let mult;
+    if(isGod) mult = 1.55;
+    else if(isMythic) mult = 1.32;
+    else if(m.rarity === 'LR') mult = 1.22;
+    else if(m.rarity === 'UR') mult = 1.15;
+    else if(m.rarity === 'SSR') mult = 1.08;
+    else if(m.rarity === 'SR')  mult = 1.00;
+    else if(m.rarity === 'R')   mult = 0.95;
+    else                         mult = 0.90;
+    let stats = {
+      atk:  Math.round(baseOvr * mult * r(0.85, 1.15, 1)),
+      def:  Math.round(baseOvr * mult * r(0.70, 1.05, 2)),
+      hp:   Math.round(baseOvr * mult * r(7, 11, 3)),
+      spd:  Math.round(baseOvr * mult * r(0.80, 1.10, 4)),
+      crit: Math.round(r(5, 25, 5) + (baseOvr-80)*0.3 + (mult-1)*15),
+    };
+    // 2. GOD種別ボーナス (現V68基準)
+    if(isGod){
+      const bonus = _getGodStatBonus(sp);
+      stats.atk  = Math.round(stats.atk  * bonus.atk);
+      stats.def  = Math.round(stats.def  * bonus.def);
+      stats.hp   = Math.round(stats.hp   * bonus.hp);
+      stats.spd  = Math.round(stats.spd  * bonus.spd);
+      stats.crit = Math.round(stats.crit + bonus.crit);
+    }
+    // 3. 進化複利 (_doExecuteEvolve と同式)
+    const RARITY_BOOST = { N:0, R:0.02, SR:0.04, SSR:0.06, UR:0.09, LR:0.13, GOD:0.18 };
+    const rb = RARITY_BOOST[m.rarity] || 0;
+    const ev = m.evo || 0;
+    for(let lvl=1; lvl<=ev; lvl++){
+      stats.atk  = Math.round(stats.atk  * (1 + 0.12 + lvl*0.015 + rb));
+      stats.def  = Math.round(stats.def  * (1 + 0.10 + lvl*0.012 + rb*0.8));
+      stats.hp   = Math.round(stats.hp   * (1 + 0.15 + lvl*0.018 + rb*1.2));
+      stats.spd  = Math.round(stats.spd  * (1 + 0.06 + lvl*0.007 + rb*0.5));
+      stats.crit = Math.round(stats.crit + 2 + lvl*0.5 + rb*10);
+    }
+    // 既存HP比率を保持
+    const oldHp = (m.stats && m.stats.hp) || stats.hp;
+    const oldMaxHp = m.maxHp || oldHp;
+    const ratio = Math.max(0, Math.min(1, oldHp / Math.max(1, oldMaxHp)));
+    m.stats = stats;
+    m.maxHp = stats.hp;
+    m.hp = Math.round(stats.hp * ratio);
+    if(!m.alive && ratio <= 0){ m.hp = 0; }
+    recomputed++;
+  });
+  s._statsRecomputedV69 = true;
+  if(recomputed > 0){
+    console.log(`V69 migration: recomputed stats on ${recomputed} monsters (formula normalization)`);
+  }
 }
 
 // V66: 既存GODモンスターに新ボーナス分のステを追加 (旧データの遡及強化)
@@ -7147,18 +7305,22 @@ function _isDragonSpecies(sp){
   return false;
 }
 
-// V66+V68: GOD種別ボーナス取得 (3段階)
-//   竜系GOD:                +12%/+12%/+12%/+10% +5crit (従来通り最強)
-//   創造神 (genesis_prime / cosmic_architect): 竜と同等
-//   一般GOD (アマテラス/ハーデス等): V68で+8→+10%/+6→+8%/+3→+4 に増強
-//      (依然ドラゴン未満だが差を縮めた)
+// V66+V68+V70+V71: GOD種別ボーナス (3段階に再構成)
+//   竜系GOD: V71で×1.2→×1.1に緩和 (1.12×1.1=1.232, spd 1.10×1.1=1.21, crit +5)
+//   創造神 (genesis_prime / cosmic_architect): 旧の竜相当 (×1.12) を維持
+//   一般GOD (アマテラス/ハーデス等): V68の+10%/+8%/+4 維持
 const _GOD_EXCEPTION_IDS = new Set(['genesis_prime', 'cosmic_architect']);
 function _getGodStatBonus(sp){
   if(!sp) return null;
-  if(_isDragonSpecies(sp) || _GOD_EXCEPTION_IDS.has(sp.id)){
+  if(_isDragonSpecies(sp)){
+    // V71: 竜系GOD を×1.1 倍 (V70の×1.2から調整)
+    return {atk:1.232, def:1.232, hp:1.232, spd:1.21, crit:5};
+  }
+  if(_GOD_EXCEPTION_IDS.has(sp.id)){
+    // 創造神は旧竜相当 (竜より少し弱く、一般GODより強い中間)
     return {atk:1.12, def:1.12, hp:1.12, spd:1.10, crit:5};
   }
-  return {atk:1.10, def:1.10, hp:1.10, spd:1.08, crit:4};  // V68: 8→10%, 6→8%, 3→4
+  return {atk:1.10, def:1.10, hp:1.10, spd:1.08, crit:4};
 }
 
 function _buildMonster(sp, ovr, r){
@@ -8395,6 +8557,36 @@ function unlockSkillNode(uid, nodeId){
   openSkillTree(uid);
 }
 
+// V72: タイプ別特性 (パッシブ効果) - 戦闘中バフ的に作用
+const MONSTER_TRAITS = {
+  fire:    {name:'炎熱',     icon:'🔥', desc:'攻撃時20%で対象を【燃焼】(3T)。燃焼中は毎T 8%maxHpダメージ。'},
+  water:   {name:'氷結',     icon:'❄', desc:'攻撃時15%で対象を【凍結】(1T)。凍結中は行動不能+被ダメ+30%。'},
+  plant:   {name:'再生',     icon:'🌱', desc:'ターン開始時、自身のHPを3%回復。'},
+  dark:    {name:'魅了',     icon:'💜', desc:'攻撃時12%で対象を【眠り】(2T)。眠り中は完全行動不能。'},
+  light:   {name:'聖光',     icon:'✨', desc:'ターン開始時、自身のHPを5%回復し全状態異常を解除。'},
+  dragon:  {name:'竜威',     icon:'🐲', desc:'初手攻撃は必ずクリティカル。竜種シナジー時+20%atk。'},
+  mech:    {name:'装甲',     icon:'🛡', desc:'被ダメージを10%軽減。状態異常無効。'},
+  beast:   {name:'獰猛',     icon:'🐾', desc:'クリ確率+15%、HPが50%以下で更にatk+25%。'},
+  psy:     {name:'予知',     icon:'🔮', desc:'被攻撃時20%で完全回避。'},
+  cosmic:  {name:'次元干渉', icon:'🌌', desc:'攻撃時10%で対象を【麻痺】(2T)。麻痺中は30%でターンスキップ。'},
+  wind:    {name:'疾風',     icon:'🌪', desc:'SPD+15%、最初に行動した時に必殺ゲージ+20%。'},
+};
+function getMonsterTrait(m){
+  if(!m) return null;
+  const sp = (typeof SPECIES !== 'undefined') ? SPECIES.find(x => x.id === m.spId) : null;
+  const type = (sp && sp.type) || m.type;
+  return MONSTER_TRAITS[type] || null;
+}
+
+// V72: 状態異常データ (戦闘中だけ作用)
+const STATUS_EFFECTS = {
+  poison: {name:'毒',  icon:'☠', desc:'毎ターン最大HP5%ダメージ。3T継続。'},
+  paralysis: {name:'麻痺', icon:'⚡', desc:'30%で行動不能。2T継続。'},
+  sleep: {name:'眠り', icon:'💤', desc:'完全行動不能。被弾で起きる。2T。'},
+  freeze: {name:'凍結', icon:'❄', desc:'1T完全行動不能、被ダメ+30%。'},
+  burn: {name:'燃焼', icon:'🔥', desc:'毎T攻撃力15%ダメージ。3T。'},
+};
+
 function showDetail(uid){
   const m = state.monsters.find(x=>x.uid===uid);
   if(!m) return;
@@ -8410,6 +8602,14 @@ function showDetail(uid){
       <div class="sk-desc">${s.desc}</div>
     </div>`;
   }).join('');
+
+  // V72: 特性表示
+  const trait = getMonsterTrait(m);
+  const traitHtml = trait ? `
+    <div class="skill-card" style="background:linear-gradient(135deg,#1a0a3e,#3a0a5e);border:1px solid #b964ff;">
+      <div class="sk-name" style="color:#ff6bff;">${trait.icon} 特性: ${trait.name} <span style="background:#7b2ff7;color:#fff;padding:1px 5px;border-radius:4px;font-size:8px;margin-left:4px;">PASSIVE</span></div>
+      <div class="sk-desc" style="color:#ddd;">${trait.desc}</div>
+    </div>` : '';
 
   // OVR130以上（LR/MYTHIC/GOD）は演出リプレイボタンを表示
   const tier = (m.god || m.rarity==='GOD' || m.ovr>=140) ? 'GOD'
@@ -8437,6 +8637,7 @@ function showDetail(uid){
       ${statRow('速度',m.stats.spd,160)}
       ${statRow('クリ%',m.stats.crit,60)}
     </div>
+    ${traitHtml}
     ${skillsHtml || '<div style="font-size:10px;opacity:0.6;text-align:center;padding:6px;">特殊スキルなし</div>'}
     ${replayBtnHtml}
     <div class="modal-actions">
@@ -9604,12 +9805,50 @@ function buildPlayerTeam(size, customTeamUids){
   }
   if(pool.length === 0) return [];
   const n = size || 3;
-  return pool.slice(0, n).map(m => {
+  const team = pool.slice(0, n).map(m => {
     // V18: バトル用にコピーしてからスキルツリーバフ適用 (元のstatsを汚さない)
     const copy = {...m, stats: {...m.stats}, skills: [...(m.skills||[])]};
     try{ applySkillTreeToCombatStats(copy); }catch(e){}
     return {...copy, hp: copy.stats.hp, maxHp: copy.stats.hp, burn: 0, alive: true, ult: 0};
   });
+  // V70: 同属性シナジー — 3体以上同タイプ編成で +15% atk
+  _applyTypeSynergy(team);
+  return team;
+}
+
+// V70: 同属性シナジー判定
+//   3体以上同じタイプが編成内にいたら、該当monsterのatkを×1.15
+//   炎統一・龍縛り・闇染め等の編成戦略を促進
+function _applyTypeSynergy(team){
+  if(!Array.isArray(team) || team.length < 3) return;
+  const counts = {};
+  team.forEach(m => { if(m && m.type) counts[m.type] = (counts[m.type]||0) + 1; });
+  team.forEach(m => {
+    if(!m || !m.type || !m.stats) return;
+    if(counts[m.type] >= 3){
+      m.stats.atk = Math.round(m.stats.atk * 1.15);
+      m.maxHp = m.stats.hp;
+      m.hp = m.stats.hp;
+      m._typeSynergy = m.type;   // UI/log用
+    }
+  });
+}
+// V70: バトル開始時にシナジー発動をログ通知
+function _announceTeamSynergies(team, sideLabel){
+  if(!Array.isArray(team)) return;
+  const types = new Set();
+  team.forEach(m => { if(m && m._typeSynergy) types.add(m._typeSynergy); });
+  if(types.size === 0) return;
+  const TYPE_LBL = {fire:'🔥炎', water:'💧水', plant:'🌿草', dark:'🌑闇',
+                    light:'☀光', dragon:'🐲竜', mech:'⚙機', beast:'🐾獣',
+                    psy:'🔮念', cosmic:'🌌宙', wind:'🌪風'};
+  setTimeout(() => {
+    types.forEach(t => {
+      try{
+        showLog(`✨ ${sideLabel}に【${TYPE_LBL[t]||t} シナジー】発動! ATK +15%`);
+      }catch(e){}
+    });
+  }, 600);
 }
 
 // === BOSS DIFFICULTY SCALING by dungeon depth ===
@@ -9720,7 +9959,10 @@ function buildEnemyTeam(stage, isBoss, di){
       spId: csp.id,
     });
   }
-  return team.map(m => ({...m, hp: m.stats.hp, maxHp: m.stats.hp, burn:0, alive:true, ult:0}));
+  const finalTeam = team.map(m => ({...m, hp: m.stats.hp, maxHp: m.stats.hp, burn:0, alive:true, ult:0}));
+  // V70: 敵チームにも同属性シナジー (公平ルール)
+  _applyTypeSynergy(finalTeam);
+  return finalTeam;
 }
 
 function startBattle(di,si){
@@ -9752,6 +9994,9 @@ function _startBattleWithTeam(di, si, selectedUids){
   document.getElementById('battle-bg').className = 'battle-bg ' + d.bgClass;
   renderBattle();
   document.getElementById('battle-overlay').classList.add('active');
+  // V70: 同属性シナジー発動を通知
+  _announceTeamSynergies(pTeam, '味方');
+  _announceTeamSynergies(eTeam, '敵');
   if(stage.boss){
     SFX.bossAppear();
     setTimeout(()=>playBossBGM(), 800);
@@ -10228,8 +10473,196 @@ function executeTurnQueue(queue, i){
 }
 
 // V58: 攻撃の衝撃処理 (ダメージ計算+ログ+次のキュー進行) — 遅延でも即時でも呼べる共通関数
+// V72: 行動前の状態異常チェック → 行動可能か返す + DOT処理
+function _processStatusAtTurnStart(unit){
+  if(!unit || !unit.alive || !unit.stats) return {canAct: true};
+  let canAct = true;
+  let skipReason = null;
+  // 毒 DoT: maxHp 5%
+  if((unit.poison||0) > 0){
+    const dmg = Math.round((unit.maxHp||1) * 0.05);
+    unit.hp -= dmg;
+    unit.poison--;
+    showLog(`☠ ${unit.name} は毒で ${dmg} ダメージ！`);
+    if(unit.hp <= 0){ unit.hp = 0; unit.alive = false; return {canAct:false, dead:true}; }
+  }
+  // 燃焼 DoT: atk 15%
+  if((unit.burn||0) > 0){
+    const dmg = Math.round((unit.stats.atk||1) * 0.15);
+    unit.hp -= dmg;
+    unit.burn--;
+    showLog(`🔥 ${unit.name} は燃焼で ${dmg} ダメージ！`);
+    if(unit.hp <= 0){ unit.hp = 0; unit.alive = false; return {canAct:false, dead:true}; }
+  }
+  // 凍結: 行動不能、1Tで解除
+  if((unit.freeze||0) > 0){
+    unit.freeze--;
+    canAct = false;
+    skipReason = `❄ ${unit.name} は凍結で動けない！`;
+  }
+  // 眠り: 行動不能、被弾で起きる(別箇所で処理)
+  else if((unit.sleep||0) > 0){
+    unit.sleep--;
+    canAct = false;
+    skipReason = `💤 ${unit.name} は眠っていて動けない…`;
+  }
+  // 麻痺: 30%で行動不能
+  else if((unit.paralysis||0) > 0){
+    unit.paralysis--;
+    if(Math.random() < 0.3){
+      canAct = false;
+      skipReason = `⚡ ${unit.name} は麻痺で動けない！`;
+    }
+  }
+  // V72: 特性 - ターン開始時の自動回復系
+  const trait = getMonsterTrait(unit);
+  if(trait){
+    if(trait.name === '聖光' && unit.alive){
+      const heal = Math.round((unit.maxHp||1) * 0.05);
+      unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+      // 状態異常全解除
+      unit.poison = unit.burn = unit.paralysis = unit.sleep = unit.freeze = 0;
+    } else if(trait.name === '再生' && unit.alive){
+      const heal = Math.round((unit.maxHp||1) * 0.03);
+      unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+    }
+  }
+  if(skipReason) showLog(skipReason);
+  return {canAct};
+}
+// V72: 攻撃ヒット時に特性で状態異常を付与判定
+function _maybeInflictStatusOnHit(attacker, target){
+  if(!attacker || !target || !target.alive) return;
+  // 装甲特性持ちには状態異常無効
+  const tTrait = getMonsterTrait(target);
+  if(tTrait && tTrait.name === '装甲') return;
+  const trait = getMonsterTrait(attacker);
+  if(!trait) return;
+  const r = Math.random();
+  let inflicted = null;
+  if(trait.name === '炎熱' && r < 0.20){ target.burn = Math.max(target.burn||0, 3); inflicted = '🔥燃焼'; }
+  else if(trait.name === '氷結' && r < 0.15){ target.freeze = Math.max(target.freeze||0, 1); inflicted = '❄凍結'; }
+  else if(trait.name === '魅了' && r < 0.12){ target.sleep = Math.max(target.sleep||0, 2); inflicted = '💤眠り'; }
+  else if(trait.name === '次元干渉' && r < 0.10){ target.paralysis = Math.max(target.paralysis||0, 2); inflicted = '⚡麻痺'; }
+  if(inflicted){
+    showLog(`${trait.icon} ${attacker.name} の【${trait.name}】が発動! ${target.name} に${inflicted}!`);
+  }
+  // 被弾で眠り解除
+  if((target.sleep||0) > 0 && inflicted !== '💤眠り'){
+    target.sleep = 0;
+  }
+}
+
+// V72: ボス第二形態専用画像 (D17+の17ボス、FLUX生成)
+const SECOND_FORM_IMAGES = {
+  infernox_omega:      'images/v72_second_infernox_omega.jpg',
+  leviathan_god:       'images/v72_second_leviathan_god.jpg',
+  lakshmi_fortune:     'images/v72_second_lakshmi_fortune.jpg',
+  persephone_queen:    'images/v72_second_persephone_queen.jpg',
+  gilgamesh_hero:      'images/v72_second_gilgamesh_hero.jpg',
+  freyja:              'images/v72_second_freyja.jpg',
+  bahamut_prime:       'images/v72_second_bahamut_prime.jpg',
+  kali_destroyer:      'images/v72_second_kali_destroyer.jpg',
+  zeus_thunder:        'images/v72_second_zeus_thunder.jpg',
+  tiamat_chaos:        'images/v72_second_tiamat_chaos.jpg',
+  cosmic_architect:    'images/v72_second_cosmic_architect.jpg',
+  odin_allfather:      'images/v72_second_odin_allfather.jpg',
+  divineflame_dragon:  'images/v72_second_divineflame_dragon.jpg',
+  achilles_warrior:    'images/v72_second_achilles_warrior.jpg',
+  void_emperor:        'images/v72_second_void_emperor.jpg',
+  heracles_strong:     'images/v72_second_heracles_strong.jpg',
+  susanoo_storm:       'images/v72_second_susanoo_storm.jpg',
+};
+
+// V72: ボス第二形態 — D17以上のボスが HP30%以下で1度だけ覚醒
+const SECOND_FORM_QUOTES = {
+  default: ['まだ…これからだ！','本気を見せる時が来たな…','フン…貴様らごときに本気を出す日が来るとはな','覚悟しろ! 真の力を見せてやる!'],
+  amaterasu: ['日輪、ここにて再臨！朕の真の輝きを見よ！'],
+  zeus_thunder: ['オリュンポスの怒り、解放! 万雷よ集え!'],
+  poseidon_tide: ['深海の真の力、見るがよい! 大津波の時だ!'],
+  hades_underworld: ['冥府の門、全開! 死を超えし力を!'],
+  bahamut_prime: ['竜の真の姿を見るがよい! メガフレアX!'],
+  tiamat_chaos: ['五頭竜、真の姿に! 原初の混沌よ!'],
+  genesis_prime: ['…面白い。私も本気を出そう。創造の真理を見るがよい'],
+  cosmic_architect: ['ユニバース・リシェイプ準備完了。新たな宇宙へようこそ'],
+  void_emperor: ['虚無の真の力…貴様らごとききに見せてやる…'],
+  kali_destroyer: ['破壊の極致! 千の腕で踊らせよ!'],
+  infernox_omega: ['業火、全開! 地獄を見せてやる!'],
+};
+function _maybeTriggerSecondForm(boss){
+  if(!boss || !boss.alive || !boss.maxHp) return;
+  if(boss._formChanged) return;        // 1回だけ
+  if(!battleState || !battleState.boss) return;
+  if((battleState.di||0) < 16) return; // D17以上のみ (di=16)
+  if(boss.hp > boss.maxHp * 0.30) return;
+  // 変身!
+  boss._formChanged = true;
+  const sp = SPECIES.find(s => s.id === boss.spId);
+  // ステ上昇 (atk +30%, def +20%, spd +15%)
+  boss.stats.atk = Math.round(boss.stats.atk * 1.30);
+  boss.stats.def = Math.round(boss.stats.def * 1.20);
+  boss.stats.spd = Math.round(boss.stats.spd * 1.15);
+  boss.stats.crit = (boss.stats.crit||0) + 15;
+  // 状態異常解除 (覚醒で復活)
+  boss.poison = boss.burn = boss.paralysis = boss.sleep = boss.freeze = 0;
+  // 必殺ゲージMAX付与 (即必殺撃てる)
+  boss.ult = 100;
+  // V72: 第二形態専用画像に切り替え
+  if(SECOND_FORM_IMAGES[boss.spId]){
+    boss._originalImg = boss.img;
+    boss.img = SECOND_FORM_IMAGES[boss.spId];
+    boss.name = boss.name + ' 【覚醒】';  // 名前にラベル付与
+  }
+  // 演出
+  SFX.crit();
+  setTimeout(() => SFX.bossAppear(), 200);
+  const ov = document.getElementById('battle-overlay');
+  if(ov){
+    const fx = document.createElement('div');
+    fx.className = 'form-change-fx';
+    fx.textContent = '◆ 第二形態 ◆';
+    ov.appendChild(fx);
+    setTimeout(() => fx.remove(), 2400);
+    // CSSクラスを active-fighter に付与
+    setTimeout(() => {
+      const slot = (battleState.eActives||[]).indexOf(0);
+      if(slot >= 0){
+        const el = document.getElementById(`af-e-${slot}`);
+        if(el) el.classList.add('second-form');
+      }
+      renderBattle();
+    }, 100);
+  }
+  // セリフ
+  const quotes = SECOND_FORM_QUOTES[boss.spId] || SECOND_FORM_QUOTES.default;
+  const q = quotes[Math.floor(Math.random() * quotes.length)];
+  showLog(`◆ ${boss.name} が第二形態に変身! ATK+30% DEF+20% 必殺ゲージMAX!`);
+  setTimeout(() => {
+    _bossSpeechCooldown = 0;
+    if(typeof showBossSpeech === 'function'){
+      // 専用セリフ表示 (showBossSpeechのフォーマットを再利用)
+      const old = ov && ov.querySelector('.boss-speech');
+      if(old) old.remove();
+      const bubble = document.createElement('div');
+      const tier = boss.god ? 'GOD' : (boss.mythic ? 'MYTHIC' : '');
+      bubble.className = 'boss-speech tier-' + tier;
+      bubble.innerHTML = `<div class="boss-speech-name">${boss.name}【第二形態】</div><div class="boss-speech-text">「${q}」</div><div class="boss-speech-prompt">▼</div>`;
+      ov.appendChild(bubble);
+      setTimeout(() => bubble.remove(), 3600);
+    }
+  }, 1400);
+}
+
 function _executeAttackImpact(attacker, target, action, isPlayer, oppActives, targetIdx, queue, i){
   if(!battleState) return;
+  // V72: 予知特性持ち対象は20%で完全回避
+  const tTrait = getMonsterTrait(target);
+  if(tTrait && tTrait.name === '予知' && Math.random() < 0.20){
+    showLog(`🔮 ${target.name} の【予知】発動! 攻撃を完全回避!`);
+    renderBattle();
+    setTimeout(() => executeTurnQueue(queue, i+1), 300);
+    return;
+  }
   const result = calcDamage(attacker, target, action);
   const skillProc = result.msg && result.msg.indexOf('✨') === 0;
   if(skillProc){
@@ -10240,6 +10673,15 @@ function _executeAttackImpact(attacker, target, action, isPlayer, oppActives, ta
   if(target) target.ult = Math.min(100, (target.ult||0) + 5);
 
   if(!result.miss){
+    // V72: 凍結中の対象は被ダメ+30%
+    if((target.freeze||0) > 0) result.dmg = Math.round(result.dmg * 1.30);
+    // V72: 装甲特性は被ダメ-10%
+    if(tTrait && tTrait.name === '装甲') result.dmg = Math.round(result.dmg * 0.90);
+    // V72: 獰猛特性 - HP50%以下で +25%ダメ
+    const aTrait = getMonsterTrait(attacker);
+    if(aTrait && aTrait.name === '獰猛' && attacker.hp < attacker.maxHp * 0.5){
+      result.dmg = Math.round(result.dmg * 1.25);
+    }
     target.hp -= result.dmg;
     if(target.hp <= 0){ target.hp = 0; target.alive = false; }
     SFX[result.crit?'crit':'hit']();
@@ -10255,6 +10697,11 @@ function _executeAttackImpact(attacker, target, action, isPlayer, oppActives, ta
     }
     if(!target.alive){
       showLog(`☠ ${target.name} を倒した！`);
+    } else {
+      // V72: 特性で状態異常付与
+      _maybeInflictStatusOnHit(attacker, target);
+      // V72: ボス第二形態トリガー
+      _maybeTriggerSecondForm(target);
     }
   } else {
     const tSlot = oppActives.indexOf(targetIdx);
@@ -13659,6 +14106,8 @@ function _startPvPBattleWithTeam(decoded, selectedUids){
     alive: true,
     burn: 0,
   }));
+  // V70: PvP相手にも同属性シナジー (両陣営公平)
+  _applyTypeSynergy(eTeam);
   const pActives = Array.from({length:Math.min(3,pTeam.length)}, (_,i)=>i);
   const eActives = Array.from({length:Math.min(3,eTeam.length)}, (_,i)=>i);
   battleState = {
