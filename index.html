@@ -3227,6 +3227,74 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
   z-index:50;
 }
 
+/* V75: UNDERTALE風オープニングストーリーオーバーレイ */
+#opening-overlay{
+  position:fixed;inset:0;z-index:2500;
+  background:#000;
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity 0.8s;
+}
+.opening-bg{
+  position:absolute;inset:0;
+  background:#000;
+  background-size:cover;
+  background-position:center;
+  transition:background 1.2s ease-in-out, opacity 0.8s ease;
+  animation:openingBgKenBurns 8s ease-in-out infinite alternate;
+}
+/* Ken Burns効果: 背景がゆっくりズーム/パン */
+@keyframes openingBgKenBurns{
+  0%{transform:scale(1) translate(0,0);}
+  100%{transform:scale(1.08) translate(-1%,-1.5%);}
+}
+/* V75: 文字を読みやすくする暗い vignette */
+.opening-bg-vignette{
+  position:absolute;inset:0;z-index:1;
+  background:
+    radial-gradient(ellipse at center,transparent 20%,rgba(0,0,0,0.55) 70%,rgba(0,0,0,0.85) 100%),
+    linear-gradient(180deg,rgba(0,0,0,0.5) 0%,transparent 30%,transparent 70%,rgba(0,0,0,0.7) 100%);
+  pointer-events:none;
+}
+.opening-content{
+  position:relative;z-index:2;
+  text-align:center;padding:32px;
+  max-width:600px;
+  font-family:'Courier New','MS Gothic',monospace;
+}
+.opening-icon{
+  font-size:88px;line-height:1;margin-bottom:24px;
+  display:block;
+  filter:drop-shadow(0 0 24px rgba(255,215,0,0.8));
+  animation:openingIconIn 0.8s;
+}
+@keyframes openingIconIn{
+  0%{opacity:0;transform:scale(0.3) rotate(-180deg);}
+  100%{opacity:1;transform:scale(1) rotate(0);}
+}
+.opening-text{
+  font-size:18px;line-height:1.9;color:#ffd700;
+  text-shadow:0 0 12px rgba(255,215,0,0.6),0 2px 4px #000;
+  letter-spacing:1.5px;
+  white-space:pre-line;
+  font-weight:700;
+  min-height:200px;
+}
+.opening-skip{
+  position:fixed;bottom:24px;right:24px;z-index:3;
+  background:rgba(0,0,0,0.7);color:#ffd700;
+  border:1px solid #ffd700;padding:8px 16px;
+  border-radius:8px;font-size:11px;font-weight:900;
+  letter-spacing:3px;cursor:pointer;
+  font-family:'Courier New',monospace;
+  opacity:0.6;
+}
+.opening-skip:hover{opacity:1;}
+.opening-skip:active{transform:scale(0.95);}
+@media (max-width:380px){
+  .opening-text{font-size:15px;line-height:1.8;}
+  .opening-icon{font-size:64px;}
+}
+
 /* ========== TUTORIAL OVERLAY ========== */
 #tutorial-overlay{
   position:fixed;inset:0;z-index:1900;
@@ -3259,36 +3327,40 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
   width:0;height:0;
 }
 .tut-tooltip{
+  /* V75: 中央固定 + 大型化 — どのステップでも同じ位置に統一 */
   position:absolute;
-  left:50%;bottom:calc(120px + var(--sab));
-  transform:translateX(-50%);
-  width:calc(100% - 32px);max-width:380px;
+  left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  width:calc(100% - 24px);max-width:460px;
+  min-height:200px;
   background:linear-gradient(180deg,#1e1e3f,#0a0a18);
-  border:2px solid #ffd700;
-  border-radius:14px;
-  padding:14px 16px;
-  box-shadow:0 0 30px rgba(255,215,0,0.5),0 8px 24px rgba(0,0,0,0.7);
+  border:3px solid #ffd700;
+  border-radius:16px;
+  padding:22px 22px 20px;
+  box-shadow:0 0 40px rgba(255,215,0,0.6),0 12px 32px rgba(0,0,0,0.8);
   z-index:2;
-  animation:tutTooltipIn 0.4s ease-out;
+  animation:tutTooltipIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
 }
 @keyframes tutTooltipIn{
-  0%{opacity:0;transform:translateX(-50%) translateY(12px);}
-  100%{opacity:1;transform:translateX(-50%) translateY(0);}
+  0%{opacity:0;transform:translate(-50%,-50%) scale(0.85);}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1);}
 }
+/* V75: top-position等の上書きは無視 — 常に中央 */
 .tut-tooltip.top-position{
+  top:50%;
   bottom:auto;
-  top:calc(80px + var(--sat));
 }
 .tut-step{
-  font-size:10px;color:#ffd700;font-weight:900;letter-spacing:2px;
-  margin-bottom:4px;
+  font-size:11px;color:#ffd700;font-weight:900;letter-spacing:3px;
+  margin-bottom:8px;text-align:center;
 }
 .tut-title{
-  font-size:16px;font-weight:900;margin-bottom:6px;
-  color:#fff;letter-spacing:1px;
+  font-size:19px;font-weight:900;margin-bottom:14px;
+  color:#fff;letter-spacing:1px;text-align:center;
+  text-shadow:0 0 12px rgba(255,215,0,0.4);
 }
 .tut-message{
-  font-size:12px;line-height:1.6;color:#ddd;margin-bottom:12px;
+  font-size:14px;line-height:1.7;color:#e8e8f0;margin-bottom:18px;
 }
 .tut-actions{
   display:flex;justify-content:space-between;gap:10px;
@@ -7023,6 +7095,7 @@ function openSettings(){
     <div class="section-title">⚙ その他</div>
     <div style="display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:14px;">
       <button onclick="closeModal();startTutorial();" style="padding:10px;border-radius:8px;font-weight:700;font-size:11px;background:#1a1a3e;color:#fff;border:1px solid #ffffff22;cursor:pointer;text-align:left;">📖 チュートリアル再生</button>
+      <button onclick="closeModal();playOpeningStory();" style="padding:10px;border-radius:8px;font-weight:700;font-size:11px;background:linear-gradient(135deg,#3a1865,#7b2ff7);color:#fff;border:1px solid #ffffff22;cursor:pointer;text-align:left;">🎬 オープニング再生</button>
       <button onclick="resetAllData()" style="padding:10px;border-radius:8px;font-weight:700;font-size:11px;background:#1a0010;color:#ff5e8a;border:1px solid #ff5e8a44;cursor:pointer;text-align:left;">⚠ 全データを初期化（危険）</button>
     </div>
 
@@ -7406,9 +7479,9 @@ const PACK_RATES = {
       {min:136,max:136,chance:0.02}, // V15: 4%  → 2% (MYTHIC)
     ],
     pity:80,
-    godBoost:0.008, // GOD 0.8% は維持
+    godBoost:0.004, // V76: 0.8% → 0.4% (半減)
   },
-  dragon:{ // 竜種特化パック — 竜種GODのみ低確率(0.3%)
+  dragon:{ // 竜種特化パック — 竜種GODのみ低確率(0.15%) V76: 0.3→0.15
     cost:{type:'gem',amount:50},
     cost10:{type:'gem',amount:450},
     rates:[
@@ -7421,10 +7494,10 @@ const PACK_RATES = {
     ],
     pity:70,
     typeFilter:'dragon',
-    godBoost:0.003,         // 0.3% で GOD tier (該当属性のみ)
+    godBoost:0.0015,         // V76: 0.3% → 0.15%
     godTypeRestrict:'dragon',
   },
-  divine:{ // 神聖光パック — 光属性GODのみ低確率(0.3%)
+  divine:{ // 神聖光パック — 光属性GODのみ低確率(0.15%)
     cost:{type:'gem',amount:60},
     cost10:{type:'gem',amount:540},
     rates:[
@@ -7437,10 +7510,10 @@ const PACK_RATES = {
     ],
     pity:70,
     typeFilter:'light',
-    godBoost:0.003,
+    godBoost:0.0015,         // V76: 0.3% → 0.15%
     godTypeRestrict:'light',
   },
-  shadow:{ // 闇影パック — 闇属性GODのみ低確率(0.3%)
+  shadow:{ // 闇影パック — 闇属性GODのみ低確率(0.15%)
     cost:{type:'gem',amount:60},
     cost10:{type:'gem',amount:540},
     rates:[
@@ -7453,15 +7526,15 @@ const PACK_RATES = {
     ],
     pity:70,
     typeFilter:'dark',
-    godBoost:0.003,
+    godBoost:0.0015,         // V76: 0.3% → 0.15%
     godTypeRestrict:'dark',
   },
 };
 
 // ---------- GENERATE MONSTER ----------
 function rollOvr(packKey){
-  // === GOD TIER: ultra-rare 0.05% on legendary pack only ===
-  if(packKey === 'legendary' && Math.random() < 0.0005){
+  // V76: legendary パックの GOD 排出率を 0.05% → 0.025% に半減
+  if(packKey === 'legendary' && Math.random() < 0.00025){
     return 140; // god tier
   }
   // ===== V7 godpack: 2% で GOD tier 排出 =====
@@ -7515,7 +7588,8 @@ function generateMonster(packKey,pityHit){
       const filtered = gods.filter(s => s.type === cfg.godTypeRestrict);
       if(filtered.length > 0) gods = filtered;
     }
-    if(gods.length > 0 && Math.random() < 0.05){
+    // V76: OVR136枠からのGODリーク率を 5% → 2% に絞る
+    if(gods.length > 0 && Math.random() < 0.02){
       candidates = gods;
     } else {
       candidates = SPECIES.filter(s => s.mythic && !s.god);
@@ -15163,12 +15237,171 @@ function startGame(){
     ts.classList.add('hide');
     setTimeout(()=>{ ts.remove(); }, 800);
   }
-  // Auto-start tutorial on first launch
+  // V75: 初回起動時にオープニングストーリームービー再生
   setTimeout(()=>{
-    if(!state.tutorialDone){
+    if(!state.openingSeen){
+      playOpeningStory(() => {
+        if(!state.tutorialDone) startTutorial();
+      });
+    } else if(!state.tutorialDone){
       startTutorial();
     }
   }, 1200);
+}
+
+// V75: UNDERTALE風オープニングストーリームービー
+// 世界神話を語る章立て、各シーンに専用FLUX画像 + 金文字TYPEWRITER効果
+const OPENING_SCENES = [
+  {
+    img: 'images/v75_op_s1.jpg',
+    icon: '✨',
+    text: '永い昔のこと。\n世界は無であり、\nただ「混沌」だけがあった。',
+    duration: 4500,
+  },
+  {
+    img: 'images/v75_op_s2.jpg',
+    icon: '🌌',
+    text: '混沌の中より一柱の神が生まれた。\n名を、ジェネシスPRIME。\n創造主にして、最初の存在。',
+    duration: 5000,
+  },
+  {
+    img: 'images/v75_op_s3.jpg',
+    icon: '⚡',
+    text: 'ジェネシスは「光」と「闇」を分かち、\n空に星々を散りばめ、\n大地に獣を放った。',
+    duration: 4500,
+  },
+  {
+    img: 'images/v75_op_s4.jpg',
+    icon: '🐲',
+    text: '彼の手によって、\n141体の「創世獣」が生まれた。\n竜、神、英雄、魔王──\n世界を彩る神話の系譜。',
+    duration: 5500,
+  },
+  {
+    img: 'images/v75_op_s5.jpg',
+    icon: '🌍',
+    text: '神々は33の領域を分かち、\nそれぞれが世界を治めた。\nアマテラスは太陽を、\nポセイドンは海を、\nハーデスは冥府を…',
+    duration: 6000,
+  },
+  {
+    img: 'images/v75_op_s6.jpg',
+    icon: '⚔',
+    text: 'だがやがて、\n神々の間に争いが生まれた。\n力を求めし者、\n秩序を望む者、\n破壊を求める者…',
+    duration: 5500,
+  },
+  {
+    img: 'images/v75_op_s7.jpg',
+    icon: '👁',
+    text: '世界は混沌へと逆戻りしようとしていた。\nそこへ、ある「人間」が現れる…\n\n名は、汝。',
+    duration: 5500,
+  },
+  {
+    img: 'images/v75_op_s8.jpg',
+    icon: '✨',
+    text: '汝、創世獣を集め、進化させ、\n神々を打ち倒し、\nこの世界の運命を決定づけよ。\n\n── 創世獣戦記 ──\n\n物語の幕が、今、開く。',
+    duration: 6500,
+  },
+];
+function playOpeningStory(onComplete){
+  // Mark as seen permanently
+  state.openingSeen = true;
+  try{ save(); }catch(e){}
+  // Build overlay
+  let overlay = document.getElementById('opening-overlay');
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'opening-overlay';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = `
+    <div class="opening-bg" id="opening-bg"></div>
+    <div class="opening-bg-vignette"></div>
+    <div class="opening-content">
+      <div class="opening-icon" id="opening-icon">✨</div>
+      <div class="opening-text" id="opening-text"></div>
+    </div>
+    <button class="opening-skip" onclick="_skipOpening()">SKIP ▶</button>
+  `;
+  overlay.style.display = 'flex';
+  // 序章用 BGM (procedural、神話風)
+  _playOpeningBGM();
+  // タイプライター効果でscene再生
+  let sceneIdx = 0;
+  window._openingActive = true;
+  window._openingComplete = () => {
+    window._openingActive = false;
+    _stopOpeningBGM();
+    overlay.style.opacity = '0';
+    setTimeout(()=>{ overlay.style.display = 'none'; if(onComplete) onComplete(); }, 800);
+  };
+  const playScene = () => {
+    if(!window._openingActive){ return; }
+    if(sceneIdx >= OPENING_SCENES.length){ window._openingComplete(); return; }
+    const sc = OPENING_SCENES[sceneIdx++];
+    const bgEl = document.getElementById('opening-bg');
+    const iconEl = document.getElementById('opening-icon');
+    const textEl = document.getElementById('opening-text');
+    if(bgEl){
+      // V75: 画像 or グラデ両対応 (旧データ互換)
+      if(sc.img) bgEl.style.background = `url(${sc.img}) center/cover`;
+      else if(sc.bg) bgEl.style.background = sc.bg;
+    }
+    if(iconEl){ iconEl.textContent = sc.icon; iconEl.style.animation = 'none'; void iconEl.offsetWidth; iconEl.style.animation = 'openingIconIn 0.8s'; }
+    if(textEl){
+      textEl.textContent = '';
+      const chars = sc.text.split('');
+      let ci = 0;
+      const typeInterval = setInterval(() => {
+        if(!window._openingActive || ci >= chars.length){ clearInterval(typeInterval); return; }
+        textEl.textContent += chars[ci++];
+      }, 65);
+    }
+    setTimeout(playScene, sc.duration);
+  };
+  playScene();
+}
+function _skipOpening(){
+  if(window._openingComplete) window._openingComplete();
+}
+
+// 序章用procedural BGM (ゆったり、神秘的、神話風)
+let _openingBgmLoop = null;
+let _openingBgmNodes = [];
+function _playOpeningBGM(){
+  if(!soundEnabled) return;
+  const ac = ensureAudio(); if(!ac) return;
+  _stopOpeningBGM();
+  const bpm = 60, beat = 60/bpm;
+  const tone = (freq, when, dur, type='sine', vol=0.07) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(vol, when + 0.4);
+    g.gain.linearRampToValueAtTime(vol*0.5, when + dur*0.7);
+    g.gain.exponentialRampToValueAtTime(0.001, when + dur);
+    o.connect(g); g.connect(ac.destination);
+    o.start(when); o.stop(when + dur + 0.1);
+    _openingBgmNodes.push(o);
+  };
+  const schedule = () => {
+    const t = ac.currentTime + 0.05;
+    // ゆったり Dマイナー pad (4分音符×8 = 8秒ループ)
+    tone(146.8, t + 0*beat, 4*beat, 'sine', 0.08);  // D
+    tone(174.6, t + 0*beat, 4*beat, 'sine', 0.06);  // F
+    tone(220,   t + 0*beat, 4*beat, 'sine', 0.05);  // A
+    tone(116.5, t + 4*beat, 4*beat, 'sine', 0.08);  // Bb
+    tone(138.6, t + 4*beat, 4*beat, 'sine', 0.06);  // D
+    tone(174.6, t + 4*beat, 4*beat, 'sine', 0.05);  // F
+    // 高音のキラめき
+    tone(587.3, t + 2*beat, 1*beat, 'triangle', 0.04);
+    tone(880,   t + 6*beat, 1*beat, 'triangle', 0.04);
+    _openingBgmLoop = setTimeout(schedule, 8*beat*1000 - 100);
+  };
+  schedule();
+}
+function _stopOpeningBGM(){
+  if(_openingBgmLoop){ clearTimeout(_openingBgmLoop); _openingBgmLoop = null; }
+  _openingBgmNodes.forEach(n => { try{ n.stop(); n.disconnect(); }catch(e){} });
+  _openingBgmNodes = [];
 }
 
 init();
