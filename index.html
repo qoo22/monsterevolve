@@ -3716,6 +3716,19 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
       <div class="sub" id="title-count-sub">アチーブメント</div>
     </button>
   </div>
+  <!-- V74: 章立てストーリー + 無限の塔 -->
+  <div class="home-grid" style="margin-top:8px;">
+    <button class="tile" onclick="openChapterMode()" style="background:linear-gradient(135deg,#3a1865,#ff6b35);">
+      <span class="ico">📖</span>
+      <div class="name">創世記</div>
+      <div class="sub" id="chapter-progress-sub">6章の物語</div>
+    </button>
+    <button class="tile" onclick="openTowerMode()" style="background:linear-gradient(135deg,#000,#7b2ff7,#ff00ff);">
+      <span class="ico">🗼</span>
+      <div class="name">無限の塔</div>
+      <div class="sub" id="tower-best-sub">ローグライト</div>
+    </button>
+  </div>
   <div class="notice">
     💡 <b>進化のしくみ</b>：素材モンスターでゲージを満タンにし、進化ボタンを押す。<br>
     1〜4進は楽勝。5進50%、6進25%、7進12%、8進7%、9進4%、<b style="color:#ffd700">10進2%</b>。<br>
@@ -4930,6 +4943,25 @@ const SPECIES = [
   {id:'ryujin_dragon',name:'龍神リュウジン',art:'🐉',img:'images/v11_dragon_ryujin_dragon.jpg',type:'water',base:140,god:true,legendary:true,mythic:true,},
   {id:'bahamut_prime',name:'バハムートPRIME',art:'🐲',img:'images/v12_bahamut_prime.jpg',type:'dragon',base:142,god:true,legendary:true,mythic:true,},
   {id:'tiamat_chaos',name:'ティアマト',art:'🐉',img:'images/v11_dragon_tiamat_chaos.jpg',type:'dragon',base:142,god:true,legendary:true,mythic:true,},
+  // V73: 超ボス専用種 — クエスト最終ステージのみ出現 (ガチャ排出なし)
+  {id:'omega_tiamat',     name:'終焉竜神オメガティアマト',  art:'🐲',img:'images/v73_omega_tiamat.jpg',     type:'dragon',base:160,god:true,legendary:true,mythic:true,bossOnly:true},
+  // V73: D35-D50 megabosses
+  {id:'chaos_origin',     name:'混沌の創造主カオスオリジン',art:'🌌',img:'images/v73_boss_chaos_origin.jpg', type:'cosmic',base:162,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'apocalypse_angel', name:'終末天使アポカリプス',      art:'😇',img:'images/v73_boss_apocalypse_angel.jpg', type:'light',base:164,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'void_king_omega',  name:'虚無の魔王ヴォイドキング・オメガ',art:'🌑',img:'images/v73_boss_void_king_omega.jpg', type:'dark',base:166,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'thanatos_prime',   name:'死神王タナトス・プライム',  art:'☠',img:'images/v73_boss_thanatos_prime.jpg', type:'dark',base:168,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'dark_dragoon',     name:'闇竜帝ダークドラグーン',    art:'🐉',img:'images/v73_boss_dark_dragoon.jpg', type:'dragon',base:170,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'ouroboros_god',    name:'創造の蛇ウロボロス',        art:'🐍',img:'images/v73_boss_ouroboros_god.jpg', type:'cosmic',base:172,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'galaxias_emperor', name:'銀河皇帝ガラクシアス',      art:'🌠',img:'images/v73_boss_galaxias_emperor.jpg', type:'cosmic',base:174,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'chronos_infinity', name:'時空神クロノス・インフィニティ',art:'⏳',img:'images/v73_boss_chronos_infinity.jpg', type:'cosmic',base:176,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'magma_dragon_lord',name:'灼熱龍マグマ・ドラゴンロード',art:'🔥',img:'images/v73_boss_magma_dragon_lord.jpg', type:'dragon',base:178,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'glacia_suprema',   name:'氷河女王グレイシア・スプリーマ',art:'❄',img:'images/v73_boss_glacia_suprema.jpg', type:'water',base:180,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'thor_omega',       name:'雷神王トール・オメガ',      art:'⚡',img:'images/v73_boss_thor_omega.jpg', type:'light',base:182,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'shadow_prime',     name:'影の覇王シャドウ・プライム',art:'🌑',img:'images/v73_boss_shadow_prime.jpg', type:'dark',base:184,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'lux_genesis',      name:'光輝の創造主ルクス・ジェネシス',art:'☀',img:'images/v73_boss_lux_genesis.jpg', type:'light',base:186,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'terra_titan',      name:'大地の覇者テラ・タイタン',  art:'🗿',img:'images/v73_boss_terra_titan.jpg', type:'plant',base:188,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'storm_emperor',    name:'風の覇王ストーム・エンペラー',art:'🌪',img:'images/v73_boss_storm_emperor.jpg', type:'wind',base:190,god:true,legendary:true,mythic:true,bossOnly:true},
+  {id:'axion_finale',     name:'真の終焉者アクシオン',      art:'🌀',img:'images/v73_boss_axion_finale.jpg', type:'cosmic',base:200,god:true,legendary:true,mythic:true,bossOnly:true},
   {id:'kali_destroyer',name:'破壊神カーリー',art:'🗡',img:'images/v9_kali_destroyer.jpg',type:'dark',base:141,god:true,legendary:true,mythic:true,},
   {id:'apollo_sun',name:'太陽神アポロン',art:'🌞',img:'images/v12_apollo_sun.jpg',type:'light',base:140,god:true,legendary:true,mythic:true,},
   {id:'cosmic_architect',name:'コズミックアーキテクト',art:'🌌',img:'images/v12_cosmic_architect.jpg',type:'cosmic',base:142,god:true,legendary:true,mythic:true,},
@@ -5508,6 +5540,144 @@ const DUNGEONS = [
       {name:'神々の最終試煉',ovr:136,enemy:'odin_allfather',drop:{mat:42,gem:660}},
       {name:'無限神スサノヲ',ovr:150,enemy:'susanoo_storm',boss:true,drop:{coin:2500000,gem:10000,mat:800}},
     ]},
+  // V73: 真の最終ダンジョン — evo+10 GOD 3体でも苦戦する超ボス専用
+  {id:'d34',name:'創世の墓所 - オリジン',desc:'すべての終焉。10進化GODでも生半可では挑めぬ。',bgClass:'dungeon-12',baseOvr:200,
+    stages:[
+      {name:'死の閾',         ovr:140,enemy:'susanoo_storm',     drop:{coin:500000,gem:800}},
+      {name:'創世の闇',       ovr:140,enemy:'tiamat_chaos',      drop:{mat:60,gem:900}},
+      {name:'絶望の咆哮',     ovr:140,enemy:'bahamut_prime',     drop:{mat:80,gem:1200}},
+      {name:'終端の刻',       ovr:140,enemy:'odin_allfather',    drop:{mat:100,gem:1500}},
+      {name:'終焉竜神オメガティアマト', ovr:165,enemy:'omega_tiamat',boss:true,drop:{coin:10000000,gem:50000,mat:2000}},
+    ]},
+  // V73: D35-D50 超ボスダンジョン群
+  {id:'d35',name:'混沌の胎動 - カオス',desc:'創造前の混沌が目覚める。',bgClass:'dungeon-12',baseOvr:205,
+    stages:[
+      {name:'始源の闇',       ovr:140,enemy:'omega_tiamat',      drop:{coin:600000,gem:1000}},
+      {name:'胎動の渦',       ovr:140,enemy:'primordial',        drop:{mat:70,gem:1100}},
+      {name:'創世前夜',       ovr:140,enemy:'genesis',           drop:{mat:90,gem:1300}},
+      {name:'混沌の眼',       ovr:140,enemy:'cosmic_architect',  drop:{mat:110,gem:1600}},
+      {name:'混沌の創造主カオスオリジン',ovr:170,enemy:'chaos_origin',boss:true,drop:{coin:12000000,gem:55000,mat:2200}},
+    ]},
+  {id:'d36',name:'終末の歌 - アポカリプス',desc:'天より天使墜つ。最終審判の刻。',bgClass:'dungeon-7',baseOvr:210,
+    stages:[
+      {name:'裁きの陣',       ovr:141,enemy:'archangel',         drop:{coin:700000,gem:1100}},
+      {name:'七つの封印',     ovr:141,enemy:'lakshmi_fortune',   drop:{mat:75,gem:1200}},
+      {name:'墜ちた光',       ovr:141,enemy:'aphrodite',         drop:{mat:95,gem:1400}},
+      {name:'最後の喇叭',     ovr:141,enemy:'apollo_sun',        drop:{mat:115,gem:1700}},
+      {name:'終末天使アポカリプス',ovr:172,enemy:'apocalypse_angel',boss:true,drop:{coin:14000000,gem:60000,mat:2400}},
+    ]},
+  {id:'d37',name:'虚無の玉座',desc:'存在ごと飲み込む暗黒の支配者。',bgClass:'dungeon-4',baseOvr:215,
+    stages:[
+      {name:'無の領域',       ovr:142,enemy:'void_emperor',      drop:{coin:800000,gem:1200}},
+      {name:'闇の階梯',       ovr:142,enemy:'kali_destroyer',    drop:{mat:80,gem:1300}},
+      {name:'虚無の囁き',     ovr:142,enemy:'hades_underworld',  drop:{mat:100,gem:1500}},
+      {name:'王座の影',       ovr:142,enemy:'demonking',         drop:{mat:120,gem:1800}},
+      {name:'虚無の魔王ヴォイドキング・オメガ',ovr:174,enemy:'void_king_omega',boss:true,drop:{coin:16000000,gem:65000,mat:2600}},
+    ]},
+  {id:'d38',name:'死の祭壇',desc:'魂を刈り取りし者、玉座より降臨。',bgClass:'dungeon-10',baseOvr:220,
+    stages:[
+      {name:'冥府の門',       ovr:143,enemy:'hades_underworld',  drop:{coin:900000,gem:1300}},
+      {name:'屍の道',         ovr:143,enemy:'lichking',          drop:{mat:85,gem:1400}},
+      {name:'魂の天秤',       ovr:143,enemy:'isis_queen',        drop:{mat:105,gem:1600}},
+      {name:'死神の鎌',       ovr:143,enemy:'persephone_queen',  drop:{mat:125,gem:1900}},
+      {name:'死神王タナトス・プライム',ovr:176,enemy:'thanatos_prime',boss:true,drop:{coin:18000000,gem:70000,mat:2800}},
+    ]},
+  {id:'d39',name:'闇竜の城塞',desc:'漆黒の翼が空を覆い尽くす。',bgClass:'dungeon-5',baseOvr:225,
+    stages:[
+      {name:'黒鱗の谷',       ovr:144,enemy:'bahamut_prime',     drop:{coin:1000000,gem:1400}},
+      {name:'魔竜の咆哮',     ovr:144,enemy:'tiamat_chaos',      drop:{mat:90,gem:1500}},
+      {name:'闇龍の翼',       ovr:144,enemy:'void_dragon_god',   drop:{mat:110,gem:1700}},
+      {name:'呪われし鎧',     ovr:144,enemy:'obsidian_dragon',   drop:{mat:130,gem:2000}},
+      {name:'闇竜帝ダークドラグーン',ovr:178,enemy:'dark_dragoon',boss:true,drop:{coin:20000000,gem:75000,mat:3000}},
+    ]},
+  {id:'d40',name:'無限の輪 - ウロボロス',desc:'始まりも終わりもない、無限の蛇。',bgClass:'dungeon-12',baseOvr:230,
+    stages:[
+      {name:'時の螺旋',       ovr:145,enemy:'time_dragon_god',   drop:{coin:1100000,gem:1500}},
+      {name:'永劫の環',       ovr:145,enemy:'eternalon',         drop:{mat:95,gem:1600}},
+      {name:'宇宙の鱗',       ovr:145,enemy:'quetzalcoatl_serpent',drop:{mat:115,gem:1800}},
+      {name:'始原の脈動',     ovr:145,enemy:'genesis_prime',     drop:{mat:135,gem:2100}},
+      {name:'創造の蛇ウロボロス',ovr:180,enemy:'ouroboros_god',boss:true,drop:{coin:23000000,gem:82000,mat:3300}},
+    ]},
+  {id:'d41',name:'銀河の覇権',desc:'星々を統べる帝王。',bgClass:'dungeon-12',baseOvr:235,
+    stages:[
+      {name:'流星の道',       ovr:146,enemy:'astralord',         drop:{coin:1200000,gem:1600}},
+      {name:'銀河の渦',       ovr:146,enemy:'stellaris',         drop:{mat:100,gem:1700}},
+      {name:'恒星の館',       ovr:146,enemy:'cosmic_architect',  drop:{mat:120,gem:1900}},
+      {name:'帝王の戦車',     ovr:146,enemy:'helios_chariot',    drop:{mat:140,gem:2200}},
+      {name:'銀河皇帝ガラクシアス',ovr:182,enemy:'galaxias_emperor',boss:true,drop:{coin:26000000,gem:90000,mat:3600}},
+    ]},
+  {id:'d42',name:'時空の裂け目',desc:'時間と空間を司る者。',bgClass:'dungeon-9',baseOvr:240,
+    stages:[
+      {name:'時の砂漠',       ovr:147,enemy:'time_dragon_god',   drop:{coin:1300000,gem:1700}},
+      {name:'未来の予兆',     ovr:147,enemy:'oracleon',          drop:{mat:105,gem:1800}},
+      {name:'過去の幽閉',     ovr:147,enemy:'eternalon',         drop:{mat:125,gem:2000}},
+      {name:'時計の歪み',     ovr:147,enemy:'genesis',           drop:{mat:145,gem:2300}},
+      {name:'時空神クロノス・インフィニティ',ovr:184,enemy:'chronos_infinity',boss:true,drop:{coin:30000000,gem:100000,mat:4000}},
+    ]},
+  {id:'d43',name:'灼熱の溶岩湖',desc:'燃え盛るマグマの王国。',bgClass:'dungeon-2',baseOvr:245,
+    stages:[
+      {name:'業火の小道',     ovr:148,enemy:'infernox_omega',    drop:{coin:1400000,gem:1800}},
+      {name:'灼熱の塔',       ovr:148,enemy:'phoenix',           drop:{mat:110,gem:1900}},
+      {name:'マグマの川',     ovr:148,enemy:'inferno_dragon_god',drop:{mat:130,gem:2100}},
+      {name:'地獄の炎',       ovr:148,enemy:'infernogod',        drop:{mat:150,gem:2400}},
+      {name:'灼熱龍マグマ・ドラゴンロード',ovr:186,enemy:'magma_dragon_lord',boss:true,drop:{coin:33000000,gem:110000,mat:4400}},
+    ]},
+  {id:'d44',name:'氷河の宮殿',desc:'絶対零度の支配者。',bgClass:'dungeon-7',baseOvr:250,
+    stages:[
+      {name:'凍れる海',       ovr:149,enemy:'leviathan_god',     drop:{coin:1500000,gem:1900}},
+      {name:'氷柱の森',       ovr:149,enemy:'frostthunder_dragon',drop:{mat:115,gem:2000}},
+      {name:'極北の門',       ovr:149,enemy:'ryujin_dragon',     drop:{mat:135,gem:2200}},
+      {name:'凍結の刻印',     ovr:149,enemy:'oceansovereign',    drop:{mat:155,gem:2500}},
+      {name:'氷河女王グレイシア・スプリーマ',ovr:188,enemy:'glacia_suprema',boss:true,drop:{coin:36000000,gem:120000,mat:4800}},
+    ]},
+  {id:'d45',name:'雷霆の頂',desc:'稲妻の真の王、覚醒。',bgClass:'dungeon-8',baseOvr:255,
+    stages:[
+      {name:'雲海の道',       ovr:150,enemy:'thor_thunder',      drop:{coin:1600000,gem:2000}},
+      {name:'雷雲の祭壇',     ovr:150,enemy:'zeus_thunder',      drop:{mat:120,gem:2100}},
+      {name:'稲妻の塔',       ovr:150,enemy:'thunder_dragon_god',drop:{mat:140,gem:2300}},
+      {name:'天空の戦車',     ovr:150,enemy:'lugh_thunderbringer',drop:{mat:160,gem:2600}},
+      {name:'雷神王トール・オメガ',ovr:190,enemy:'thor_omega',boss:true,drop:{coin:40000000,gem:130000,mat:5200}},
+    ]},
+  {id:'d46',name:'影の領域',desc:'存在せざる者の覇権。',bgClass:'dungeon-4',baseOvr:260,
+    stages:[
+      {name:'影の入口',       ovr:151,enemy:'void_emperor',      drop:{coin:1800000,gem:2200}},
+      {name:'闇の回廊',       ovr:151,enemy:'necrobane',         drop:{mat:125,gem:2300}},
+      {name:'幽冥の祭壇',     ovr:151,enemy:'persephone_queen',  drop:{mat:145,gem:2500}},
+      {name:'影の王城',       ovr:151,enemy:'lichking',          drop:{mat:165,gem:2800}},
+      {name:'影の覇王シャドウ・プライム',ovr:192,enemy:'shadow_prime',boss:true,drop:{coin:44000000,gem:140000,mat:5600}},
+    ]},
+  {id:'d47',name:'光の創世',desc:'絶対の聖光、世界を再構築。',bgClass:'dungeon-6',baseOvr:265,
+    stages:[
+      {name:'天の階段',       ovr:152,enemy:'apollo_sun',        drop:{coin:2000000,gem:2400}},
+      {name:'聖光の祭壇',     ovr:152,enemy:'amaterasu',         drop:{mat:130,gem:2500}},
+      {name:'神聖の宝玉',     ovr:152,enemy:'isis_queen',        drop:{mat:150,gem:2700}},
+      {name:'光輝の頂',       ovr:152,enemy:'aphrodite',         drop:{mat:170,gem:3000}},
+      {name:'光輝の創造主ルクス・ジェネシス',ovr:194,enemy:'lux_genesis',boss:true,drop:{coin:48000000,gem:150000,mat:6000}},
+    ]},
+  {id:'d48',name:'大地の覇者',desc:'山岳と森林を統べる巨人。',bgClass:'dungeon-1',baseOvr:270,
+    stages:[
+      {name:'樹海の小径',     ovr:153,enemy:'forestguardian',    drop:{coin:2200000,gem:2600}},
+      {name:'古代の樹',       ovr:153,enemy:'ancientent',        drop:{mat:135,gem:2700}},
+      {name:'巨岩の谷',       ovr:153,enemy:'verdragon',         drop:{mat:155,gem:2900}},
+      {name:'結晶の洞窟',     ovr:153,enemy:'geomancer',         drop:{mat:175,gem:3200}},
+      {name:'大地の覇者テラ・タイタン',ovr:196,enemy:'terra_titan',boss:true,drop:{coin:52000000,gem:160000,mat:6500}},
+    ]},
+  {id:'d49',name:'嵐の眼',desc:'風と雷を統べる帝王。',bgClass:'dungeon-9',baseOvr:275,
+    stages:[
+      {name:'風吹きの丘',     ovr:154,enemy:'windsprite',        drop:{coin:2400000,gem:2800}},
+      {name:'颶風の塔',       ovr:154,enemy:'storm_dragon',      drop:{mat:140,gem:2900}},
+      {name:'雷雨の祭壇',     ovr:154,enemy:'susanoo_storm',     drop:{mat:160,gem:3100}},
+      {name:'嵐神の戦車',     ovr:154,enemy:'quetzalcoatl_serpent',drop:{mat:180,gem:3400}},
+      {name:'風の覇王ストーム・エンペラー',ovr:198,enemy:'storm_emperor',boss:true,drop:{coin:56000000,gem:170000,mat:7000}},
+    ]},
+  {id:'d50',name:'真の終焉 - アクシオン',desc:'全てを終わらせる者。最後の試練。',bgClass:'dungeon-12',baseOvr:300,
+    stages:[
+      {name:'存在の壁',       ovr:155,enemy:'omega_tiamat',      drop:{coin:3000000,gem:3500}},
+      {name:'神話の墓',       ovr:155,enemy:'apocalypse_angel',  drop:{mat:160,gem:3700}},
+      {name:'虚無の極',       ovr:155,enemy:'void_king_omega',   drop:{mat:180,gem:4000}},
+      {name:'創造の終端',     ovr:155,enemy:'chaos_origin',      drop:{mat:200,gem:4500}},
+      {name:'真の終焉者アクシオン',ovr:200,enemy:'axion_finale',boss:true,drop:{coin:99999999,gem:300000,mat:10000}},
+    ]},
 ];
 
 // ---------- GAME STATE ----------
@@ -5519,7 +5689,7 @@ let state = load() || {
   pity:{legendary:0,element:0,evo:0,limited:0},
   marketSort:'price-asc',
   currentDungeon:0,
-  unlockedDungeons:(function(){const a=[true];for(let i=1;i<33;i++)a.push(false);return a;})(),
+  unlockedDungeons:(function(){const a=[true];for(let i=1;i<50;i++)a.push(false);return a;})(),
   evolveTarget:null,
   evolveMaterials:[],
   lastDaily:0,
@@ -7215,7 +7385,7 @@ function generateMonster(packKey,pityHit){
   if(ovr === 140){
     // V14: 専門パックはGODも該当属性に限定
     const cfg = PACK_RATES[packKey] || {};
-    let gods = SPECIES.filter(s => s.god);
+    let gods = SPECIES.filter(s => s.god && !s.bossOnly);
     if(cfg.godTypeRestrict){
       const filtered = gods.filter(s => s.type === cfg.godTypeRestrict);
       if(filtered.length > 0) gods = filtered;  // 該当属性のGODのみ
@@ -7235,7 +7405,7 @@ function generateMonster(packKey,pityHit){
     // OVR136 splits: 95% mythic, 5% GOD-tier (if available)
     // V14: 専門パックはGODも該当属性に限定
     const cfg = PACK_RATES[packKey] || {};
-    let gods = SPECIES.filter(s => s.god);
+    let gods = SPECIES.filter(s => s.god && !s.bossOnly);
     if(cfg.godTypeRestrict){
       const filtered = gods.filter(s => s.type === cfg.godTypeRestrict);
       if(filtered.length > 0) gods = filtered;
@@ -9873,6 +10043,15 @@ function getBossBuffs(di){
     defMult *= 1 + extra * 0.05;          // D17=+5%, D33=+85% (旧+4%→+5%)
     critBonus += extra * 3;               // D17=+3, D33=+51 (旧+2→+3)
   }
+  // V73: D34-D50 メガボスダンジョン群 — 段階強化
+  if(di >= 33){
+    const extraD = di - 32;  // D34=1, D50=17
+    const mega = 1.5 + extraD * 0.10;  // D34=×1.6, D40=×2.1, D50=×3.2
+    hpMult  *= mega;
+    atkMult *= 1 + extraD * 0.06;       // D34=+6%, D50=+102%
+    defMult *= 1 + extraD * 0.05;       // D34=+5%, D50=+85%
+    critBonus += 20 + extraD * 2;
+  }
   return { hp: hpMult, atk: atkMult, def: defMult, crit: critBonus };
 }
 // V15: 後半ダンジョンの通常モブも強化用ファクター
@@ -10329,7 +10508,10 @@ function playerAttack(type){
   //   D1〜D16: 2回 / D17〜D24: 3回 / D25+: 4回 / 限定ステ: +1
   const depthBoss = (battleState.di != null && battleState.di >= 0) ? battleState.di : 0;
   let bossActs = 2;
-  if(depthBoss >= 25) bossActs = 4;
+  if(depthBoss >= 49) bossActs = 7;       // V73: D50 アクシオンは7回行動 (絶対王者)
+  else if(depthBoss >= 39) bossActs = 6;  // D40-D49 は6回
+  else if(depthBoss >= 33) bossActs = 5;  // D34-D39 は5回
+  else if(depthBoss >= 25) bossActs = 4;
   else if(depthBoss >= 17) bossActs = 3;
   if(battleState.isLimited) bossActs += 1;
 
@@ -10572,6 +10754,24 @@ const SECOND_FORM_IMAGES = {
   void_emperor:        'images/v72_second_void_emperor.jpg',
   heracles_strong:     'images/v72_second_heracles_strong.jpg',
   susanoo_storm:       'images/v72_second_susanoo_storm.jpg',
+  omega_tiamat:        'images/v73_omega_tiamat_form2.jpg',  // V73: 超ボス専用第二形態
+  // V73: D35-D50 megaボス覚醒形態
+  chaos_origin:        'images/v73_second_chaos_origin.jpg',
+  apocalypse_angel:    'images/v73_second_apocalypse_angel.jpg',
+  void_king_omega:     'images/v73_second_void_king_omega.jpg',
+  thanatos_prime:      'images/v73_second_thanatos_prime.jpg',
+  dark_dragoon:        'images/v73_second_dark_dragoon.jpg',
+  ouroboros_god:       'images/v73_second_ouroboros_god.jpg',
+  galaxias_emperor:    'images/v73_second_galaxias_emperor.jpg',
+  chronos_infinity:    'images/v73_second_chronos_infinity.jpg',
+  magma_dragon_lord:   'images/v73_second_magma_dragon_lord.jpg',
+  glacia_suprema:      'images/v73_second_glacia_suprema.jpg',
+  thor_omega:          'images/v73_second_thor_omega.jpg',
+  shadow_prime:        'images/v73_second_shadow_prime.jpg',
+  lux_genesis:         'images/v73_second_lux_genesis.jpg',
+  terra_titan:         'images/v73_second_terra_titan.jpg',
+  storm_emperor:       'images/v73_second_storm_emperor.jpg',
+  axion_finale:        'images/v73_second_axion_finale.jpg',
 };
 
 // V72: ボス第二形態 — D17以上のボスが HP30%以下で1度だけ覚醒
@@ -10588,6 +10788,24 @@ const SECOND_FORM_QUOTES = {
   void_emperor: ['虚無の真の力…貴様らごとききに見せてやる…'],
   kali_destroyer: ['破壊の極致! 千の腕で踊らせよ!'],
   infernox_omega: ['業火、全開! 地獄を見せてやる!'],
+  omega_tiamat: ['…この世界は終わる。私と共に終焉せよ','十二の頭、解放完了。創世の墓所が開く…','貴様らごときに本気を出すとはな…後悔するがよい'],
+  // V73 D35-D50 megaボス覚醒セリフ
+  chaos_origin:        ['始源より蘇る…混沌の真の姿を見よ!','胎動が止まらぬ…世界よ、再構成されろ!'],
+  apocalypse_angel:    ['七つの封印、開いた…最終審判の刻だ!','喇叭が響く…全ての終わりが来る!'],
+  void_king_omega:     ['虚無の門、全開!存在ごと飲み込んでやる!','王座より立ち上がる時が来た…'],
+  thanatos_prime:      ['魂の刈り取り、開始する…','死神の真の姿、見せてやろう…'],
+  dark_dragoon:        ['闇竜の真の力、覚醒!','黒鱗の鎧、解放…貴様らを葬り去る!'],
+  ouroboros_god:       ['無限の輪は閉ざされぬ…再生する!','始まりも終わりもない…ただ存在し続ける!'],
+  galaxias_emperor:    ['銀河を統べる帝王の真の姿!','星々よ、私のために輝け!'],
+  chronos_infinity:    ['時を…止める。貴様らの動きが見える…','過去も未来も、私のものだ!'],
+  magma_dragon_lord:   ['マグマよ、溢れろ!世界を焼き尽くせ!','龍の真の業火、見るがよい!'],
+  glacia_suprema:      ['絶対零度、解放…全てを凍らせる!','氷河女王の真の冷気を浴びよ!'],
+  thor_omega:          ['ミョルニル、最大解放!神の雷を浴びよ!','オメガの雷霆、ここに!'],
+  shadow_prime:        ['影に呑まれよ…貴様らに光は無い!','存在せざる者が、貴様を消す!'],
+  lux_genesis:         ['光輝の真の姿…世界を再創造する!','聖光、絶対!すべて浄化せよ!'],
+  terra_titan:         ['大地よ、震えよ!タイタンの真の力!','山岳を砕く一撃を見せてやろう!'],
+  storm_emperor:       ['嵐よ、荒れ狂え!風の覇王、覚醒!','颶風の真の威力を浴びよ!'],
+  axion_finale:        ['…これが終わりだ。すべての存在は無に還る','私はアクシオン…始まりにして終わり。貴様らの存在は…消える','面白い。ここまで来たか…だが、ここが真の終焉だ'],
 };
 function _maybeTriggerSecondForm(boss){
   if(!boss || !boss.alive || !boss.maxHp) return;
@@ -11873,6 +12091,21 @@ function endBattle(result){
   try{ stopBGM(); }catch(e){}
   // V61: 残っているSFXも全部停止 (攻撃音の残響対策)
   try{ _stopAllSfx(); }catch(e){}
+  // V74: 無限の塔モード時の特別処理 — 通常の報酬計算をバイパス
+  if(battleState.isTower){
+    const wasWin = (result === 'win');
+    const towerFloor = battleState.towerFloor;
+    document.getElementById('battle-overlay').classList.remove('active');
+    battleState = null;
+    setTimeout(() => {
+      if(wasWin){
+        if(_towerRun) _towerOnFloorClear();
+      } else {
+        if(_towerRun){ _towerOnFloorLose(); _towerRun = null; }
+      }
+    }, 600);
+    return;
+  }
   // ダイアログも全部除去
   const ov = document.getElementById('battle-overlay');
   if(ov){
@@ -12701,6 +12934,368 @@ const LORE_TEXT = `
 <p>絶望に瀕した世界に現れたのが、未だ若く力なきモンスターを束ねる <b style="color:#ffd700;">調律者(あなた)</b> である。あなたは136の神々を呼び覚まし、進化させ、絆を結ぶことで再び世界に均衡を取り戻す使命を負うこととなった。</p>
 <p style="text-align:center;margin-top:14px;font-style:italic;color:#ffd700;">「集めよ、進化させよ、無限の塔の頂きで真理を掴め。」<br>— ジェネシスPRIMEの預言書より —</p>
 </div>`;
+// V74: 章立てストーリーモード — D1〜D50を6章にグルーピング
+const STORY_CHAPTERS = [
+  {
+    id:1, title:'創世記第一章: 始まりの森',
+    icon:'🌲', color:'#1a4a1a,#3a7a3a',
+    dungeons:[0,1,2,3,4],  // D1-D5
+    intro:'伝説は始まりの森より生まれる。汝、創世獣の力を借り、最初の試練に挑め。神々の系譜が今、目を覚ます。',
+    outro:'始まりの森を抜けた汝に、神々は微笑む。だがこれは長き旅の序章に過ぎぬ…。次なる試練が呼んでいる。',
+    reward:{coin:50000, gem:500, mat:30}
+  },
+  {
+    id:2, title:'創世記第二章: 古き神話の伝承',
+    icon:'⚔', color:'#3a1a4a,#7a3a8a',
+    dungeons:[5,6,7,8,9,10,11],  // D6-D12
+    intro:'砂漠、氷雪、ネオン、空、地獄、結晶、彼方──七つの領域に古代神話の伝承が眠る。汝の真の力が試される時。',
+    outro:'七つの領域を巡り、汝は神話の真髄に触れた。だが神々は更なる試練を用意している…。神界の扉が開く時が来た。',
+    reward:{coin:150000, gem:1500, mat:80}
+  },
+  {
+    id:3, title:'創世記第三章: 神々の覚醒',
+    icon:'⚡', color:'#4a3a1a,#ffa83a',
+    dungeons:[12,13,14,15],  // D13-D16
+    intro:'神界の門が開く。アマテラス、ファフニール、トール、氷帝──覚醒した神々が降臨する。汝の力で神に挑むのだ。',
+    outro:'神々を打ち倒した汝は、もはや神に近き存在となった。だが業炎の地獄は次の試練を待つ…。',
+    reward:{coin:400000, gem:3500, mat:160}
+  },
+  {
+    id:4, title:'創世記第四章: 業炎の時代',
+    icon:'🔥', color:'#5a0a0a,#ff3a3a',
+    dungeons:[16,17,18,19,20,21,22,23],  // D17-D24
+    intro:'業炎の地獄から魔王の宮殿まで。インフェルノックス、深淵王、戦女神、バハムートPRIME、破壊神カーリー──八体の覇者が立ちはだかる。',
+    outro:'業炎の時代を制した汝に、神々は最後の試練を課す。神々の戦争が始まる…。汝、終局を見届けよ。',
+    reward:{coin:1200000, gem:8000, mat:400}
+  },
+  {
+    id:5, title:'創世記第五章: 神々の戦争',
+    icon:'👑', color:'#1a1a5a,#7b2ff7',
+    dungeons:[24,25,26,27,28,29,30,31,32],  // D25-D33
+    intro:'天上の決戦場が開く。ゼウス、ティアマト、コズミックアーキテクト、オーディン、ヴォイドエンペラー、ヘラクレス、スサノオ──九柱の頂神が集結。神々の戦争、ここに開戦。',
+    outro:'無限終焉の果てを越えた汝、もはや神を超えし者。だが…まだ「真の終焉」が待っている。創世の墓所が呼んでいる。',
+    reward:{coin:5000000, gem:30000, mat:1500}
+  },
+  {
+    id:6, title:'創世記終章: 真の終焉',
+    icon:'🌀', color:'#000,#ff0040,#ffd700',
+    dungeons:Array.from({length:17}, (_,i) => 33+i),  // D34-D50
+    intro:'創世の墓所、混沌の胎動、終末の歌、虚無の玉座…そして真の終焉者アクシオン。すべての試練の終着点。汝、最後の物語を綴れ。',
+    outro:'真の終焉者を倒した汝、創世記の幕を引きし英雄となる。汝の名は永遠に語り継がれる…。創世獣戦記、完。',
+    reward:{coin:50000000, gem:200000, mat:8000}
+  },
+];
+
+function _chapterProgress(ch){
+  // 章内のボスステージ全クリアか?
+  const fc = (state.firstClear || {});
+  let cleared = 0, total = ch.dungeons.length;
+  ch.dungeons.forEach(di => {
+    const d = DUNGEONS[di];
+    if(!d || !d.stages) return;
+    const lastStage = d.stages.length - 1;
+    if(fc[`d${di+1}_${lastStage}`] || fc[`${d.id}_${lastStage}`]) cleared++;
+  });
+  return { cleared, total, complete: cleared >= total };
+}
+
+function openChapterMode(){
+  const c = document.getElementById('modal-content');
+  let html = `<button class="close-btn" onclick="closeModal()">✕</button>
+    <div style="text-align:center;margin-bottom:14px;">
+      <div style="font-size:20px;font-weight:900;letter-spacing:4px;background:linear-gradient(90deg,#ffd700,#ff6b35,#ffd700);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 20px #ffd70033;">📖 創 世 記 📖</div>
+      <div style="font-size:11px;opacity:0.7;margin-top:4px;">6章の物語、創世獣戦記</div>
+    </div>`;
+  STORY_CHAPTERS.forEach(ch => {
+    const p = _chapterProgress(ch);
+    const isComplete = p.complete;
+    const isUnlocked = ch.id === 1 || _chapterProgress(STORY_CHAPTERS[ch.id-2]).complete;
+    const claimedKey = `_chReward_${ch.id}`;
+    const claimed = !!(state.progress && state.progress[claimedKey]);
+    let actionBtn = '';
+    if(!isUnlocked){
+      actionBtn = `<div style="font-size:10px;color:#888;padding:6px;">🔒 前章クリアで解放</div>`;
+    } else if(isComplete && !claimed){
+      actionBtn = `<button onclick="_claimChapterReward(${ch.id})" style="background:linear-gradient(135deg,#ffd700,#ff6b35);color:#000;padding:8px;border-radius:8px;font-weight:900;font-size:11px;border:none;cursor:pointer;width:100%;">🏆 章クリア報酬を受取</button>`;
+    } else if(isComplete && claimed){
+      actionBtn = `<button onclick="_showChapterCutscene(${ch.id}, 'outro')" style="background:#444;color:#fff;padding:8px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;width:100%;">📜 完結ストーリーを見る</button>`;
+    } else {
+      const next = ch.dungeons.find(di => {
+        const d = DUNGEONS[di]; if(!d) return false;
+        const lastStage = d.stages.length-1;
+        return !((state.firstClear||{})[`d${di+1}_${lastStage}`] || (state.firstClear||{})[`${d.id}_${lastStage}`]);
+      });
+      const nextDName = next != null ? DUNGEONS[next].name : '?';
+      actionBtn = `<button onclick="_showChapterCutscene(${ch.id}, 'intro')" style="background:linear-gradient(135deg,${ch.color});color:#fff;padding:8px;border-radius:8px;font-weight:900;font-size:11px;border:none;cursor:pointer;width:100%;">📜 物語を読む → 次: ${nextDName}</button>`;
+    }
+    const dungeonList = ch.dungeons.map(di => {
+      const d = DUNGEONS[di]; if(!d) return '';
+      const last = d.stages.length-1;
+      const cl = (state.firstClear||{})[`d${di+1}_${last}`] || (state.firstClear||{})[`${d.id}_${last}`];
+      return `<span style="background:${cl?'#0a4a0a':'#2a2a3a'};color:${cl?'#4cff7a':'#888'};padding:1px 5px;border-radius:4px;font-size:9px;margin:2px;display:inline-block;">${cl?'✓':'·'} D${di+1}</span>`;
+    }).join('');
+    html += `<div style="background:linear-gradient(135deg,${ch.color});border:1px solid ${isComplete?'#ffd700':'#fff3'};border-radius:10px;padding:10px;margin-bottom:8px;opacity:${isUnlocked?1:0.5};">
+      <div style="font-size:13px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;">${ch.icon} ${ch.title} ${isComplete?'<span style="font-size:10px;color:#ffd700;margin-left:6px;">✓ 完結</span>':''}</div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.85);margin:4px 0;letter-spacing:1px;">${p.cleared}/${p.total} ダンジョン制覇</div>
+      <div style="margin:4px 0;">${dungeonList}</div>
+      <div style="margin-top:8px;">${actionBtn}</div>
+    </div>`;
+  });
+  c.innerHTML = html;
+  document.getElementById('modal').classList.add('active');
+}
+
+function _showChapterCutscene(chId, kind){
+  const ch = STORY_CHAPTERS.find(c => c.id === chId);
+  if(!ch) return;
+  const text = kind === 'outro' ? ch.outro : ch.intro;
+  const c = document.getElementById('modal-content');
+  c.innerHTML = `<button class="close-btn" onclick="closeModal()">✕</button>
+    <div style="background:linear-gradient(135deg,${ch.color});padding:20px;border-radius:14px;margin-bottom:14px;text-align:center;">
+      <div style="font-size:32px;">${ch.icon}</div>
+      <div style="font-size:14px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;letter-spacing:2px;margin-top:6px;">${ch.title}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.7);margin-top:4px;">${kind === 'outro' ? '── 完結 ──' : '── 序幕 ──'}</div>
+    </div>
+    <div style="background:rgba(0,0,0,0.6);padding:16px;border-radius:10px;font-size:12px;line-height:1.9;letter-spacing:0.5px;color:#e8e8f0;border-left:3px solid #ffd700;">${text}</div>
+    <button onclick="openChapterMode()" class="btn-secondary" style="margin-top:14px;width:100%;padding:10px;border-radius:8px;font-weight:900;">← 章一覧に戻る</button>`;
+}
+
+function _claimChapterReward(chId){
+  const ch = STORY_CHAPTERS.find(c => c.id === chId);
+  if(!ch) return;
+  const claimedKey = `_chReward_${ch.id}`;
+  if(!state.progress) state.progress = {};
+  if(state.progress[claimedKey]){ toast('すでに受取済み','error'); return; }
+  state.progress[claimedKey] = true;
+  state.coin += ch.reward.coin;
+  state.gem  += ch.reward.gem;
+  state.mat  += ch.reward.mat;
+  SFX.victory();
+  try{ save(); }catch(e){}
+  toast(`🏆 ${ch.title} クリア報酬獲得！`);
+  // outro 演出
+  _showChapterCutscene(chId, 'outro');
+  setTimeout(() => {
+    try{ updateResourceDisplay(); }catch(e){}
+  }, 100);
+}
+
+// V74: 無限の塔モード (ローグライト)
+// 1階毎にボス1体、勝てば3択バフから1つ選んでパワーアップ → 次階へ
+// 死んだら1階に戻る、到達階記録、節目報酬
+const TOWER_BUFFS = [
+  // 攻撃系
+  {id:'atk_s', icon:'⚔', name:'攻撃+10%', desc:'全味方ATK+10%', apply:(team)=>team.forEach(m=>m.stats.atk = Math.round(m.stats.atk*1.10))},
+  {id:'atk_m', icon:'⚔', name:'攻撃+20%', desc:'全味方ATK+20%', apply:(team)=>team.forEach(m=>m.stats.atk = Math.round(m.stats.atk*1.20))},
+  {id:'atk_l', icon:'⚔', name:'狂戦士', desc:'全味方ATK+40%、DEF-20%', apply:(team)=>team.forEach(m=>{m.stats.atk=Math.round(m.stats.atk*1.40);m.stats.def=Math.round(m.stats.def*0.80);})},
+  // 防御系
+  {id:'def_s', icon:'🛡', name:'防御+15%', desc:'全味方DEF+15%', apply:(team)=>team.forEach(m=>m.stats.def = Math.round(m.stats.def*1.15))},
+  {id:'def_m', icon:'🛡', name:'鋼の体', desc:'全味方DEF+30%', apply:(team)=>team.forEach(m=>m.stats.def = Math.round(m.stats.def*1.30))},
+  // HP系
+  {id:'hp_s',  icon:'❤', name:'HP+25%', desc:'全味方maxHP+25%、現HP回復', apply:(team)=>team.forEach(m=>{m.stats.hp=Math.round(m.stats.hp*1.25);m.maxHp=m.stats.hp;m.hp=m.stats.hp;})},
+  {id:'hp_m',  icon:'❤', name:'生命の祝福', desc:'全味方maxHP+50%、現HP全回復', apply:(team)=>team.forEach(m=>{m.stats.hp=Math.round(m.stats.hp*1.50);m.maxHp=m.stats.hp;m.hp=m.stats.hp;})},
+  {id:'heal_full',icon:'💚',name:'完全回復', desc:'全味方HP100%回復+復活',apply:(team)=>team.forEach(m=>{m.hp=m.maxHp;m.alive=true;})},
+  // SPD系
+  {id:'spd_s', icon:'💨', name:'素早+15%', desc:'全味方SPD+15%', apply:(team)=>team.forEach(m=>m.stats.spd = Math.round(m.stats.spd*1.15))},
+  // CRT系
+  {id:'crt_s', icon:'💥', name:'必殺率+15', desc:'全味方クリ率+15', apply:(team)=>team.forEach(m=>m.stats.crit = (m.stats.crit||0) + 15)},
+  // 必殺系
+  {id:'ult_s', icon:'⚡', name:'必殺充填', desc:'全味方必殺ゲージ+50%', apply:(team)=>team.forEach(m=>m.ult = Math.min(100,(m.ult||0)+50))},
+  {id:'ult_ready', icon:'⚡', name:'必殺準備完了', desc:'全味方必殺ゲージMAX', apply:(team)=>team.forEach(m=>m.ult = 100)},
+  // 特殊
+  {id:'revive_one', icon:'✨', name:'復活', desc:'死亡1体を完全復活', apply:(team)=>{const d=team.find(m=>!m.alive);if(d){d.alive=true;d.hp=d.maxHp;}}},
+];
+
+let _towerRun = null;  // {floor, buffs:[], pTeamSnapshot, bestThisRun:0}
+
+function openTowerMode(){
+  const c = document.getElementById('modal-content');
+  const best = (state.towerBest || 0);
+  const runs = (state.towerRuns || 0);
+  const inRun = !!_towerRun;
+  c.innerHTML = `<button class="close-btn" onclick="closeModal()">✕</button>
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:24px;font-weight:900;letter-spacing:6px;background:linear-gradient(90deg,#7b2ff7,#ff00ff,#ffd700);-webkit-background-clip:text;background-clip:text;color:transparent;">🗼 無限の塔 🗼</div>
+      <div style="font-size:11px;opacity:0.7;margin-top:4px;">階毎にボス出現、勝てば3択バフ、死亡で1階に戻る</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      <div style="background:linear-gradient(135deg,#1a0a3e,#3a1865);padding:10px;border-radius:10px;text-align:center;">
+        <div style="font-size:9px;opacity:0.7;">最高到達階</div>
+        <div style="font-size:22px;font-weight:900;color:#ffd700;">${best} 階</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#1a0a3e,#3a1865);padding:10px;border-radius:10px;text-align:center;">
+        <div style="font-size:9px;opacity:0.7;">挑戦回数</div>
+        <div style="font-size:22px;font-weight:900;color:#4ecdc4;">${runs}</div>
+      </div>
+    </div>
+    ${inRun ? `
+      <div style="background:linear-gradient(135deg,#5a0040,#000);padding:12px;border-radius:10px;margin-bottom:10px;text-align:center;border:1px solid #ff00ff;">
+        <div style="font-size:10px;opacity:0.8;">挑戦中</div>
+        <div style="font-size:18px;font-weight:900;color:#ff6bff;">第 ${_towerRun.floor} 階</div>
+        <div style="font-size:9px;opacity:0.7;margin-top:4px;">獲得バフ: ${_towerRun.buffs.length}個</div>
+      </div>
+      <button onclick="closeModal();_towerStartFloor()" style="width:100%;padding:14px;border-radius:10px;font-weight:900;font-size:13px;border:none;cursor:pointer;background:linear-gradient(135deg,#ff6b35,#f7931e);color:#fff;letter-spacing:2px;">⚔ ${_towerRun.floor}階へ挑む</button>
+      <button onclick="_towerAbandon()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;font-weight:700;font-size:11px;border:1px solid #555;background:#0a0a14;color:#fff;cursor:pointer;">🏳 撤退する (進捗放棄)</button>
+    ` : `
+      <div style="background:rgba(255,215,0,0.08);border:1px dashed #ffd70066;border-radius:8px;padding:10px;font-size:10px;line-height:1.8;margin-bottom:14px;">
+        💡 <b style="color:#ffd700;">節目報酬</b><br>
+        10階: 💎200 / 25階: 💎500+🔮20 / 50階: 💎2000+🔮100<br>
+        100階: 💎10000+🔮500 + 特別称号
+      </div>
+      <button onclick="_towerNewRun()" style="width:100%;padding:14px;border-radius:10px;font-weight:900;font-size:13px;border:none;cursor:pointer;background:linear-gradient(135deg,#ff6b35,#f7931e,#7b2ff7);color:#fff;letter-spacing:2px;box-shadow:0 0 18px rgba(255,107,53,0.5);">🗼 新規挑戦開始</button>
+    `}`;
+  document.getElementById('modal').classList.add('active');
+}
+
+function _towerNewRun(){
+  _towerRun = { floor: 1, buffs: [], pTeamSnapshot: null };
+  state.towerRuns = (state.towerRuns || 0) + 1;
+  try{ save(); }catch(e){}
+  openTeamPicker(selectedUids => {
+    if(!selectedUids || !selectedUids.length){ _towerRun = null; return; }
+    _towerRun.selectedUids = selectedUids;
+    _towerStartFloor();
+  });
+}
+
+function _towerAbandon(){
+  _towerRun = null;
+  toast('🏳 塔から撤退した');
+  openTowerMode();
+}
+
+// 塔のボスをランダム生成 (階数で強さスケール)
+function _towerGenerateBoss(floor){
+  // floorに応じてOVRと特性を変える
+  const pools = [
+    // 1-10: 通常ボス
+    {minOvr:120, maxOvr:130, picks:['leviathan','infernox','phoenix','voidking','lichking','demonking']},
+    // 11-25: LR帯
+    {minOvr:130, maxOvr:140, picks:['fafnir_gold','ancientdragon','necrobane','archangel','infernogod','oceansovereign']},
+    // 26-50: MYTHIC+
+    {minOvr:140, maxOvr:148, picks:['amaterasu','zeus_thunder','hades_underworld','bahamut_prime','tiamat_chaos','apollo_sun']},
+    // 51-75: GOD
+    {minOvr:148, maxOvr:160, picks:['genesis_prime','cosmic_architect','infernox_omega','void_emperor','kali_destroyer','susanoo_storm']},
+    // 76-100: メガボス
+    {minOvr:160, maxOvr:200, picks:['omega_tiamat','chaos_origin','apocalypse_angel','thanatos_prime','dark_dragoon','ouroboros_god','axion_finale']},
+  ];
+  const idx = floor <= 10 ? 0 : floor <= 25 ? 1 : floor <= 50 ? 2 : floor <= 75 ? 3 : 4;
+  const pool = pools[idx];
+  const spId = pool.picks[(floor + state.towerRuns) % pool.picks.length];
+  const sp = SPECIES.find(s => s.id === spId) || SPECIES.find(s => s.god);
+  const ovr = pool.minOvr + Math.floor(Math.random() * (pool.maxOvr - pool.minOvr + 1));
+  return { enemy: sp.id, ovr };
+}
+
+function _towerStartFloor(){
+  if(!_towerRun){ toast('挑戦中のランが無い','error'); return; }
+  if(!_ensureCapacityForBattle()) return;
+  const floor = _towerRun.floor;
+  const boss = _towerGenerateBoss(floor);
+  const fakeStage = {name:`第${floor}階`, ovr: boss.ovr, enemy: boss.enemy, boss: true,
+                    drop:{coin: floor*1000, gem: floor*5}};
+  const pTeam = buildPlayerTeam(6, _towerRun.selectedUids);
+  if(!pTeam.length){ toast('モンスターがいません','error'); return; }
+  // 階数バフ (塔専用 floor scale)
+  const towerScale = 1 + (floor - 1) * 0.08;
+  // 蓄積バフを適用 (各バフのapply関数を順に呼ぶ)
+  _towerRun.buffs.forEach(b => { try{ b.apply(pTeam); }catch(e){} });
+  stopBGM();
+  const eTeam = buildEnemyTeam(fakeStage, true, Math.min(33 + Math.floor(floor/10), 49));
+  // 塔ボスは更にfloor scale
+  eTeam.forEach(m => {
+    m.stats.atk = Math.round(m.stats.atk * towerScale);
+    m.stats.hp = Math.round(m.stats.hp * towerScale);
+    m.maxHp = m.stats.hp;
+    m.hp = m.stats.hp;
+  });
+  const eActives = [0];
+  const pActives = Array.from({length:Math.min(3,pTeam.length)}, (_,i)=>i);
+  battleState = {
+    di:-3, si:0, drop: fakeStage.drop,
+    boss:true, isTower:true, towerFloor:floor,
+    pTeam, eTeam, pActives, eActives, log:[],
+  };
+  document.getElementById('battle-bg').className = 'battle-bg dungeon-12';
+  renderBattle();
+  document.getElementById('battle-overlay').classList.add('active');
+  SFX.bossAppear();
+  setTimeout(()=>playBossBGM(), 800);
+  showLog(`🗼 第${floor}階: ${eTeam[0].name} 現る!`);
+}
+
+// 塔の階クリア時の処理 (endBattle 内で塔判定して呼ぶ)
+function _towerOnFloorClear(){
+  if(!_towerRun) return;
+  const cleared = _towerRun.floor;
+  state.towerBest = Math.max(state.towerBest || 0, cleared);
+  // 節目報酬
+  const milestoneRewards = {10:{gem:200},25:{gem:500,mat:20},50:{gem:2000,mat:100},100:{gem:10000,mat:500}};
+  if(milestoneRewards[cleared]){
+    const r = milestoneRewards[cleared];
+    state.gem += r.gem || 0;
+    state.mat += r.mat || 0;
+    toast(`🏆 ${cleared}階到達! 💎${r.gem||0}🔮${r.mat||0}`);
+  }
+  _towerRun.floor++;
+  try{ save(); }catch(e){}
+  // 3択バフ選択モーダル
+  _showTowerBuffPicker();
+}
+
+function _showTowerBuffPicker(){
+  // 3択ランダム
+  const pool = TOWER_BUFFS.slice();
+  // シャッフル
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]];}
+  const choices = pool.slice(0, 3);
+  const c = document.getElementById('modal-content');
+  c.innerHTML = `<div style="text-align:center;margin-bottom:14px;">
+      <div style="font-size:11px;opacity:0.7;letter-spacing:2px;">第 ${_towerRun.floor-1} 階クリア!</div>
+      <div style="font-size:18px;font-weight:900;color:#ffd700;margin-top:4px;">🎁 祝福を選べ 🎁</div>
+      <div style="font-size:10px;opacity:0.7;margin-top:4px;">次の階に進む前に1つ選択</div>
+    </div>
+    ${choices.map((b,i)=>`
+      <button onclick="_towerPickBuff(${i})" style="width:100%;background:linear-gradient(135deg,#1a0a3e,#3a1865);border:2px solid #ff6bff;border-radius:10px;padding:14px;margin-bottom:8px;color:#fff;cursor:pointer;text-align:left;">
+        <div style="font-size:18px;font-weight:900;">${b.icon} ${b.name}</div>
+        <div style="font-size:10px;opacity:0.8;margin-top:4px;">${b.desc}</div>
+      </button>
+    `).join('')}`;
+  // バフリストを window に保存
+  window._towerBuffChoices = choices;
+  document.getElementById('modal').classList.add('active');
+}
+
+function _towerPickBuff(idx){
+  const b = (window._towerBuffChoices || [])[idx];
+  if(!b) return;
+  _towerRun.buffs.push(b);
+  SFX.gemGet();
+  toast(`✨ ${b.name} 獲得! 第${_towerRun.floor}階へ`);
+  closeModal();
+  setTimeout(() => _towerStartFloor(), 600);
+}
+
+function _towerOnFloorLose(){
+  if(!_towerRun) return;
+  const reached = _towerRun.floor;
+  state.towerBest = Math.max(state.towerBest || 0, reached - 1);
+  try{ save(); }catch(e){}
+  const c = document.getElementById('modal-content');
+  c.innerHTML = `<div style="text-align:center;padding:14px;">
+      <div style="font-size:32px;">☠</div>
+      <div style="font-size:18px;font-weight:900;color:#ff1e5a;margin-top:8px;letter-spacing:2px;">DEFEATED</div>
+      <div style="font-size:11px;opacity:0.7;margin-top:6px;">第 ${reached} 階で敗北</div>
+      <div style="margin:14px 0;padding:10px;background:rgba(0,0,0,0.4);border-radius:8px;font-size:11px;">
+        到達階数: <b style="color:#ffd700;">${reached - 1}</b> / 100<br>
+        最高記録: <b style="color:#4cff7a;">${state.towerBest}</b> 階<br>
+        獲得バフ: ${_towerRun.buffs.length}個
+      </div>
+      <button onclick="_towerRun=null;closeModal();openTowerMode();" style="width:100%;padding:12px;border-radius:10px;font-weight:900;border:none;cursor:pointer;background:linear-gradient(135deg,#7b2ff7,#00d4ff);color:#fff;">塔に戻る</button>
+    </div>`;
+  document.getElementById('modal').classList.add('active');
+}
+
 function openLoreModal(){
   const c = document.getElementById('modal-content');
   c.innerHTML = `
