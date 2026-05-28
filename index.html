@@ -3261,16 +3261,6 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
   max-width:600px;
   font-family:'Courier New','MS Gothic',monospace;
 }
-.opening-icon{
-  font-size:88px;line-height:1;margin-bottom:24px;
-  display:block;
-  filter:drop-shadow(0 0 24px rgba(255,215,0,0.8));
-  animation:openingIconIn 0.8s;
-}
-@keyframes openingIconIn{
-  0%{opacity:0;transform:scale(0.3) rotate(-180deg);}
-  100%{opacity:1;transform:scale(1) rotate(0);}
-}
 .opening-text{
   font-size:18px;line-height:1.9;color:#ffd700;
   text-shadow:0 0 12px rgba(255,215,0,0.6),0 2px 4px #000;
@@ -3290,9 +3280,22 @@ body.gacha-fx-light .flash{filter:brightness(1) !important;}
 }
 .opening-skip:hover{opacity:1;}
 .opening-skip:active{transform:scale(0.95);}
+/* V77: 画面下に「タップでスキップ」ヒントを点滅表示 */
+.opening-tap-hint{
+  position:absolute;
+  bottom:-50px;left:50%;transform:translateX(-50%);
+  font-size:10px;letter-spacing:3px;color:#888;
+  font-family:'Courier New',monospace;
+  animation:openingHintBlink 1.6s ease-in-out infinite;
+}
+@keyframes openingHintBlink{
+  0%,100%{opacity:0.3;}
+  50%{opacity:0.9;}
+}
+/* V77: オーバーレイ全体をタップ可能に */
+#opening-overlay{cursor:pointer;}
 @media (max-width:380px){
   .opening-text{font-size:15px;line-height:1.8;}
-  .opening-icon{font-size:64px;}
 }
 
 /* ========== TUTORIAL OVERLAY ========== */
@@ -15237,15 +15240,11 @@ function startGame(){
     ts.classList.add('hide');
     setTimeout(()=>{ ts.remove(); }, 800);
   }
-  // V75: 初回起動時にオープニングストーリームービー再生
+  // V77: オープニングストーリームービーを毎回再生 (タップでスキップ可)
   setTimeout(()=>{
-    if(!state.openingSeen){
-      playOpeningStory(() => {
-        if(!state.tutorialDone) startTutorial();
-      });
-    } else if(!state.tutorialDone){
-      startTutorial();
-    }
+    playOpeningStory(() => {
+      if(!state.tutorialDone) startTutorial();
+    });
   }, 1200);
 }
 
@@ -15302,9 +15301,7 @@ const OPENING_SCENES = [
   },
 ];
 function playOpeningStory(onComplete){
-  // Mark as seen permanently
-  state.openingSeen = true;
-  try{ save(); }catch(e){}
+  // V77: 毎回再生 (state.openingSeen フラグは廃止)
   // Build overlay
   let overlay = document.getElementById('opening-overlay');
   if(!overlay){
@@ -15316,12 +15313,19 @@ function playOpeningStory(onComplete){
     <div class="opening-bg" id="opening-bg"></div>
     <div class="opening-bg-vignette"></div>
     <div class="opening-content">
-      <div class="opening-icon" id="opening-icon">✨</div>
       <div class="opening-text" id="opening-text"></div>
+      <div class="opening-tap-hint">タップでスキップ</div>
     </div>
-    <button class="opening-skip" onclick="_skipOpening()">SKIP ▶</button>
+    <button class="opening-skip" onclick="event.stopPropagation();_skipOpening()">SKIP ▶</button>
   `;
   overlay.style.display = 'flex';
+  overlay.style.opacity = '1';
+  // V77: オーバーレイ全体をタップで即スキップ
+  overlay.onclick = (ev) => {
+    // SKIPボタン以外のどこをタップしてもスキップ
+    if(ev.target && ev.target.classList && ev.target.classList.contains('opening-skip')) return;
+    _skipOpening();
+  };
   // 序章用 BGM (procedural、神話風)
   _playOpeningBGM();
   // タイプライター効果でscene再生
@@ -15338,14 +15342,12 @@ function playOpeningStory(onComplete){
     if(sceneIdx >= OPENING_SCENES.length){ window._openingComplete(); return; }
     const sc = OPENING_SCENES[sceneIdx++];
     const bgEl = document.getElementById('opening-bg');
-    const iconEl = document.getElementById('opening-icon');
     const textEl = document.getElementById('opening-text');
     if(bgEl){
       // V75: 画像 or グラデ両対応 (旧データ互換)
       if(sc.img) bgEl.style.background = `url(${sc.img}) center/cover`;
       else if(sc.bg) bgEl.style.background = sc.bg;
     }
-    if(iconEl){ iconEl.textContent = sc.icon; iconEl.style.animation = 'none'; void iconEl.offsetWidth; iconEl.style.animation = 'openingIconIn 0.8s'; }
     if(textEl){
       textEl.textContent = '';
       const chars = sc.text.split('');
@@ -15363,7 +15365,9 @@ function _skipOpening(){
   if(window._openingComplete) window._openingComplete();
 }
 
-// 序章用procedural BGM (ゆったり、神秘的、神話風)
+// V76: UNDERTALE「Once Upon a Time」風のオープニングBGM
+// 儚いピアノメロディ、Eb major(短調寄りの明暗交じる響き)、60bpm
+// 構成: 主旋律ピアノ + 重ねた低音ベース + 控えめなパッド
 let _openingBgmLoop = null;
 let _openingBgmNodes = [];
 function _playOpeningBGM(){
@@ -15371,30 +15375,79 @@ function _playOpeningBGM(){
   const ac = ensureAudio(); if(!ac) return;
   _stopOpeningBGM();
   const bpm = 60, beat = 60/bpm;
-  const tone = (freq, when, dur, type='sine', vol=0.07) => {
-    const o = ac.createOscillator(), g = ac.createGain();
-    o.type = type; o.frequency.value = freq;
+  // ピアノ風 (triangle 主体 + 軽いハーモニクス)
+  const piano = (freq, when, dur, vol=0.08) => {
+    const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+    o1.type = 'triangle'; o1.frequency.value = freq;
+    o2.type = 'sine'; o2.frequency.value = freq * 2;  // 1オクターブ上のハーモニクス
+    const g2 = ac.createGain(); g2.gain.value = 0.3;  // ハーモニクスは控えめ
+    o2.connect(g2); g2.connect(g);
     g.gain.setValueAtTime(0, when);
-    g.gain.linearRampToValueAtTime(vol, when + 0.4);
-    g.gain.linearRampToValueAtTime(vol*0.5, when + dur*0.7);
+    g.gain.linearRampToValueAtTime(vol, when + 0.01);  // ピアノ感のアタック
+    g.gain.exponentialRampToValueAtTime(vol*0.3, when + dur*0.6);
+    g.gain.exponentialRampToValueAtTime(0.001, when + dur);
+    o1.connect(g); g.connect(ac.destination);
+    o1.start(when); o1.stop(when + dur + 0.05);
+    o2.start(when); o2.stop(when + dur + 0.05);
+    _openingBgmNodes.push(o1, o2);
+  };
+  // 控えめなパッド (sine、長く伸びる)
+  const pad = (freq, when, dur, vol=0.04) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(vol, when + 1.5);
+    g.gain.linearRampToValueAtTime(vol*0.7, when + dur*0.6);
     g.gain.exponentialRampToValueAtTime(0.001, when + dur);
     o.connect(g); g.connect(ac.destination);
     o.start(when); o.stop(when + dur + 0.1);
     _openingBgmNodes.push(o);
   };
+  // UNDERTALE "Once Upon a Time" 風メロディ (16秒ループ)
+  // Cマイナー寄りの儚いメロディ
+  // C4=261.63 D4=293.66 Eb4=311.13 F4=349.23 G4=392 Ab4=415.30 Bb4=466.16
+  // C5=523.25 D5=587.33 Eb5=622.25 F5=698.46 G5=783.99 Ab5=830.61
+  const C4=261.63, D4=293.66, Eb4=311.13, F4=349.23, G4=392.00, Ab4=415.30, Bb4=466.16;
+  const C5=523.25, D5=587.33, Eb5=622.25, F5=698.46, G5=783.99, Ab5=830.61, C6=1046.50;
+  const C3=130.81, G3=196.00, Ab3=207.65, Bb3=233.08, Eb3=155.56, F3=174.61;
+
   const schedule = () => {
     const t = ac.currentTime + 0.05;
-    // ゆったり Dマイナー pad (4分音符×8 = 8秒ループ)
-    tone(146.8, t + 0*beat, 4*beat, 'sine', 0.08);  // D
-    tone(174.6, t + 0*beat, 4*beat, 'sine', 0.06);  // F
-    tone(220,   t + 0*beat, 4*beat, 'sine', 0.05);  // A
-    tone(116.5, t + 4*beat, 4*beat, 'sine', 0.08);  // Bb
-    tone(138.6, t + 4*beat, 4*beat, 'sine', 0.06);  // D
-    tone(174.6, t + 4*beat, 4*beat, 'sine', 0.05);  // F
-    // 高音のキラめき
-    tone(587.3, t + 2*beat, 1*beat, 'triangle', 0.04);
-    tone(880,   t + 6*beat, 1*beat, 'triangle', 0.04);
-    _openingBgmLoop = setTimeout(schedule, 8*beat*1000 - 100);
+    // 主旋律 (UNDERTALEのオープニング風: ゆったり、メランコリック)
+    // フレーズ1: G-Eb-D-C (下降) → Eb-G-Bb (上昇)
+    piano(G4, t + 0*beat, 1.5*beat, 0.10);
+    piano(Eb4, t + 1.5*beat, 1.0*beat, 0.09);
+    piano(D4, t + 2.5*beat, 1.0*beat, 0.09);
+    piano(C4, t + 3.5*beat, 1.5*beat, 0.10);
+
+    piano(Eb4, t + 5*beat, 1.0*beat, 0.09);
+    piano(G4, t + 6*beat, 1.0*beat, 0.10);
+    piano(Bb4, t + 7*beat, 2.0*beat, 0.11);
+
+    // フレーズ2: 上昇→下降 (高音域へ)
+    piano(C5, t + 9*beat, 1.5*beat, 0.10);
+    piano(Bb4, t + 10.5*beat, 1.0*beat, 0.09);
+    piano(Ab4, t + 11.5*beat, 1.0*beat, 0.09);
+    piano(G4, t + 12.5*beat, 1.5*beat, 0.10);
+
+    piano(F4, t + 14*beat, 1.0*beat, 0.08);
+    piano(Eb4, t + 15*beat, 1.0*beat, 0.08);
+
+    // ベース (低音ルート、ゆっくり伸びる)
+    pad(C3, t + 0*beat, 4*beat, 0.06);
+    pad(Eb3, t + 0*beat, 4*beat, 0.04);  // 3度
+    pad(Ab3, t + 4*beat, 4*beat, 0.06);
+    pad(C4, t + 4*beat, 4*beat, 0.04);
+    pad(F3, t + 8*beat, 4*beat, 0.06);
+    pad(Ab3, t + 8*beat, 4*beat, 0.04);
+    pad(G3, t + 12*beat, 4*beat, 0.06);
+    pad(Bb3, t + 12*beat, 4*beat, 0.04);
+
+    // 装飾の高音 (たまにキラめく星のような音)
+    piano(C6, t + 8*beat, 0.5*beat, 0.04);
+    piano(G5, t + 13*beat, 0.5*beat, 0.04);
+
+    _openingBgmLoop = setTimeout(schedule, 16*beat*1000 - 100);
   };
   schedule();
 }
